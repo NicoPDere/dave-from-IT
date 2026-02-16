@@ -167,6 +167,8 @@
   }
   /* Graffiti tag — 80's bubble pixel art */
   .graffiti {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
     font-family: 'Press Start 2P', monospace;
     font-size: 1.6rem; color: #ff44cc; letter-spacing: 4px;
     transform: rotate(-2deg);
@@ -180,11 +182,15 @@
     white-space: nowrap;
     font-weight: bold;
     text-align: center;
-    width: 100%;
-    padding: 10px 0 6px 0;
-    background: linear-gradient(to right, transparent, #ff44cc08, #44eeff08, transparent);
+    padding: 6px 0 max(6px, env(safe-area-inset-bottom, 6px));
+    background: linear-gradient(to top, #0a0a1a 40%, transparent);
     -webkit-text-stroke: 1px #aa0066;
     animation: graffitiGlow 2s ease-in-out infinite alternate;
+    z-index: 70;
+    pointer-events: none;
+  }
+  @media (pointer: coarse) {
+    .graffiti { bottom: 120px; background: none; }
   }
   @keyframes graffitiGlow {
     from { text-shadow: 3px 3px 0 #aa0066, 6px 6px 0 #660044, -1px -1px 0 #ff88ee, 0 0 10px #ff44cc88, 0 0 30px #ff00aa44; }
