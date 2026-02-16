@@ -1425,6 +1425,25 @@ document.getElementById('sound-toggle').addEventListener('click',()=>{
   document.getElementById('sound-toggle').textContent=soundEnabled?'🔊':'🔇';
   if(!soundEnabled){stopMusic();stopCountdownTick();}else if(state.running){startMusic();startCountdownTick();}
 });
+
+// Resume audio when returning to the app (mobile browsers suspend AudioContext)
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible' && audioCtx){
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    if(state.running && soundEnabled){
+      startMusic();
+      startCountdownTick();
+    }
+  }
+});
+// Also handle focus event as a fallback for some mobile browsers
+window.addEventListener('focus',()=>{
+  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+  if(state.running && soundEnabled){
+    startMusic();
+    startCountdownTick();
+  }
+});
 </script>
 </body>
 </html>
