@@ -461,87 +461,159 @@ function checkPromotion(){const p=getCurrentPromotion();const i=PROMOTIONS.index
 // ═══════════════════════════════════════
 //  TICKET INTERRUPT PEOPLE
 // ═══════════════════════════════════════
-const TICKET_PEOPLE = [
-  { name: 'Karen', dept: 'Marketing', msgs: [
-    '"How does email work again?"','"I lost my computer. Like, the whole thing."',
-    '"The internet deleted itself."','"My mouse is upside down."',
-    '"Can you make the logo bigger in the database?"',
-    '"My screen went black. I think it\'s dead. Oh wait it was off."',
-    '"I emailed a file to myself but I can\'t find me."',
-    '"The printer smells like burning ambition."',
-    '"Can you make the website more blue but also less blue?"',
-    '"I accidentally set my out-of-office to forever."',
-  ]},
-  { name: 'Chad', dept: 'Sales', msgs: [
-    '"I spilled coffee on the server. Which button is undo?"',
-    '"My spreadsheet is haunted, rows keep appearing."',
-    '"I saved a file but now my desk drawer won\'t open?"',
-    '"I typed Google into Google and it broke."',
-    '"Can you install Tinder on my work laptop?"',
-    '"My mouse won\'t move. Yes I\'m using the stapler."',
-    '"I need you to download more RAM for my phone."',
-    '"Where do I put the stamp on an email?"',
-    '"I replied all to the entire company. Twice."',
-    '"Can you make my laptop lighter? It\'s too heavy."',
-  ]},
-  { name: 'Greg', dept: 'Legal', msgs: [
-    '"I need you to print the entire internet."',
-    '"Someone hacked my password. It was password123."',
-    '"My screen is too bright, I think it has a virus."',
-    '"I unplugged something and now the lights are off."',
-    '"The PDF is angry at me."',
-    '"I need to fax this website."',
-    '"My computer is in Spanish and I don\'t speak Italian."',
-    '"Can you sue the WiFi?"',
-    '"I accidentally emailed our competitor our business plan."',
-    '"The cloud is full. Can you empty it?"',
-  ]},
-  { name: 'Susan', dept: 'Management', msgs: [
-    '"Where is the ANY key?"',
-    '"I deleted the recycle bin, can you recycle it back?"',
-    '"My laptop won\'t turn on. No I haven\'t plugged it in, why?"',
-    '"The WiFi tastes funny today."',
-    '"Can you make Excel more exciting?"',
-    '"My password expired. Can you make it not expire?"',
-    '"I need you to put the internet on a USB stick."',
-    '"Can you teach my laptop to take notes for me?"',
-    '"I held the laptop upside down and the files fell out."',
-    '"The calendar app won\'t add more hours to Friday."',
-  ]},
-  { name: 'Kevin', dept: 'Engineering', msgs: [
-    '"I pushed to prod and now the building is on fire."',
-    '"The database is upside down."',
-    '"I accidentally mass-emailed my cat photos to all clients."',
-    '"Who put a firewall in front of my fire?"',
-    '"I rm -rf\'d something important. What was the company called again?"',
-    '"I asked ChatGPT to fix it and now there are two bugs."',
-    '"The server room is flooding. I may have watered the cloud."',
-    '"I turned it off but I can\'t find the on."',
-    '"My code works on my machine. Can we ship my machine?"',
-    '"I accidentally automated myself out of a job."',
-  ]},
-  { name: 'Brenda', dept: 'Reception', msgs: [
-    '"The phone keeps making phone noises."',
-    '"Someone left a computer in the microwave."',
-    '"The front door WiFi is leaking outside."',
-    '"A man is here to fix the internet. He has a shovel?"',
-    '"Can you help? My screensaver is holding me hostage."',
-  ]},
-  { name: 'Derek', dept: 'Finance', msgs: [
-    '"Excel just laughed at me. Can software do that?"',
-    '"I put the budget in the wrong spreadsheet. There are 400."',
-    '"My calculator app says I owe the company money?"',
-    '"Can you make the numbers go up instead of down?"',
-    '"I formatted my hard drive thinking it meant making it pretty."',
-  ]},
-  { name: 'Nigel', dept: 'The Basement', msgs: [
-    '"The printer has become sentient and is printing its demands."',
-    '"I\'ve been on hold with IT for three days. Oh, that\'s you."',
-    '"Something is living in the server room. It has a name badge."',
-    '"The fax machine keeps calling me at home. I\'m scared."',
-    '"My desk phone rang and when I answered it was just breathing."',
-  ]},
+const ALL_TICKET_MSGS = [
+  // Karen — Marketing
+  {name:'Karen',dept:'Marketing',msg:'"How does email work again?"'},
+  {name:'Karen',dept:'Marketing',msg:'"I lost my computer. Like, the whole thing."'},
+  {name:'Karen',dept:'Marketing',msg:'"The internet deleted itself."'},
+  {name:'Karen',dept:'Marketing',msg:'"My mouse is upside down."'},
+  {name:'Karen',dept:'Marketing',msg:'"Can you make the logo bigger in the database?"'},
+  {name:'Karen',dept:'Marketing',msg:'"My screen went black. Oh wait it was off."'},
+  {name:'Karen',dept:'Marketing',msg:'"I emailed a file to myself but I can\'t find me."'},
+  {name:'Karen',dept:'Marketing',msg:'"The printer smells like burning ambition."'},
+  {name:'Karen',dept:'Marketing',msg:'"Can you make the website more blue but also less blue?"'},
+  {name:'Karen',dept:'Marketing',msg:'"I accidentally set my out-of-office to forever."'},
+  {name:'Karen',dept:'Marketing',msg:'"I need the WiFi password in Comic Sans."'},
+  {name:'Karen',dept:'Marketing',msg:'"My laptop is being passive-aggressive."'},
+  {name:'Karen',dept:'Marketing',msg:'"Can you make a spreadsheet that sparks joy?"'},
+  {name:'Karen',dept:'Marketing',msg:'"I need to undo something I did last Tuesday."'},
+  {name:'Karen',dept:'Marketing',msg:'"My keyboard is typing in the wrong accent."'},
+  // Chad — Sales
+  {name:'Chad',dept:'Sales',msg:'"I spilled coffee on the server. Which button is undo?"'},
+  {name:'Chad',dept:'Sales',msg:'"My spreadsheet is haunted, rows keep appearing."'},
+  {name:'Chad',dept:'Sales',msg:'"I saved a file but now my desk drawer won\'t open?"'},
+  {name:'Chad',dept:'Sales',msg:'"I typed Google into Google and it broke."'},
+  {name:'Chad',dept:'Sales',msg:'"Can you install Tinder on my work laptop?"'},
+  {name:'Chad',dept:'Sales',msg:'"My mouse won\'t move. Yes I\'m using the stapler."'},
+  {name:'Chad',dept:'Sales',msg:'"I need you to download more RAM for my phone."'},
+  {name:'Chad',dept:'Sales',msg:'"Where do I put the stamp on an email?"'},
+  {name:'Chad',dept:'Sales',msg:'"I replied all to the entire company. Twice."'},
+  {name:'Chad',dept:'Sales',msg:'"Can you make my laptop lighter? It\'s too heavy."'},
+  {name:'Chad',dept:'Sales',msg:'"I sold a client software we don\'t have. Can you make it?"'},
+  {name:'Chad',dept:'Sales',msg:'"My webcam keeps showing my face. Is that normal?"'},
+  {name:'Chad',dept:'Sales',msg:'"I need a dongle for my dongle."'},
+  {name:'Chad',dept:'Sales',msg:'"The CRM says I have zero leads. Can you add some?"'},
+  {name:'Chad',dept:'Sales',msg:'"My Bluetooth is stuck on someone else\'s teeth."'},
+  // Greg — Legal
+  {name:'Greg',dept:'Legal',msg:'"I need you to print the entire internet."'},
+  {name:'Greg',dept:'Legal',msg:'"Someone hacked my password. It was password123."'},
+  {name:'Greg',dept:'Legal',msg:'"My screen is too bright, I think it has a virus."'},
+  {name:'Greg',dept:'Legal',msg:'"I unplugged something and now the lights are off."'},
+  {name:'Greg',dept:'Legal',msg:'"The PDF is angry at me."'},
+  {name:'Greg',dept:'Legal',msg:'"I need to fax this website."'},
+  {name:'Greg',dept:'Legal',msg:'"My computer is in Spanish and I don\'t speak Italian."'},
+  {name:'Greg',dept:'Legal',msg:'"Can you sue the WiFi?"'},
+  {name:'Greg',dept:'Legal',msg:'"I accidentally emailed our competitor our business plan."'},
+  {name:'Greg',dept:'Legal',msg:'"The cloud is full. Can you empty it?"'},
+  {name:'Greg',dept:'Legal',msg:'"I need a legally binding screenshot."'},
+  {name:'Greg',dept:'Legal',msg:'"Can you notarize this Excel file?"'},
+  {name:'Greg',dept:'Legal',msg:'"My document is stuck in portrait and wants landscape."'},
+  {name:'Greg',dept:'Legal',msg:'"I need to copyright my desktop wallpaper."'},
+  {name:'Greg',dept:'Legal',msg:'"Is it illegal to delete System32?"'},
+  // Susan — Management
+  {name:'Susan',dept:'Management',msg:'"Where is the ANY key?"'},
+  {name:'Susan',dept:'Management',msg:'"I deleted the recycle bin. Recycle it back?"'},
+  {name:'Susan',dept:'Management',msg:'"My laptop won\'t turn on. No I haven\'t plugged it in, why?"'},
+  {name:'Susan',dept:'Management',msg:'"The WiFi tastes funny today."'},
+  {name:'Susan',dept:'Management',msg:'"Can you make Excel more exciting?"'},
+  {name:'Susan',dept:'Management',msg:'"My password expired. Can you make it not expire?"'},
+  {name:'Susan',dept:'Management',msg:'"Put the internet on a USB stick for me."'},
+  {name:'Susan',dept:'Management',msg:'"Can you teach my laptop to take notes for me?"'},
+  {name:'Susan',dept:'Management',msg:'"I held the laptop upside down and the files fell out."'},
+  {name:'Susan',dept:'Management',msg:'"The calendar app won\'t add more hours to Friday."'},
+  {name:'Susan',dept:'Management',msg:'"I need the WiFi to reach my car."'},
+  {name:'Susan',dept:'Management',msg:'"My computer made a sad noise and I feel bad."'},
+  {name:'Susan',dept:'Management',msg:'"Can you make Outlook more optimistic?"'},
+  {name:'Susan',dept:'Management',msg:'"I think my laptop is tired. It keeps sleeping."'},
+  {name:'Susan',dept:'Management',msg:'"The screen is showing things I didn\'t ask for. Like work."'},
+  // Kevin — Engineering
+  {name:'Kevin',dept:'Engineering',msg:'"I pushed to prod and now the building is on fire."'},
+  {name:'Kevin',dept:'Engineering',msg:'"The database is upside down."'},
+  {name:'Kevin',dept:'Engineering',msg:'"I mass-emailed my cat photos to all clients."'},
+  {name:'Kevin',dept:'Engineering',msg:'"Who put a firewall in front of my fire?"'},
+  {name:'Kevin',dept:'Engineering',msg:'"I rm -rf\'d something. What was the company called?"'},
+  {name:'Kevin',dept:'Engineering',msg:'"I asked ChatGPT to fix it and now there are two bugs."'},
+  {name:'Kevin',dept:'Engineering',msg:'"The server room is flooding. I watered the cloud."'},
+  {name:'Kevin',dept:'Engineering',msg:'"I turned it off but I can\'t find the on."'},
+  {name:'Kevin',dept:'Engineering',msg:'"My code works on my machine. Can we ship my machine?"'},
+  {name:'Kevin',dept:'Engineering',msg:'"I accidentally automated myself out of a job."'},
+  {name:'Kevin',dept:'Engineering',msg:'"I refactored the codebase into one very long line."'},
+  {name:'Kevin',dept:'Engineering',msg:'"Stack Overflow is down and I\'ve forgotten how to code."'},
+  {name:'Kevin',dept:'Engineering',msg:'"I committed my passwords. All of them."'},
+  {name:'Kevin',dept:'Engineering',msg:'"I wrote a script that deletes scripts."'},
+  {name:'Kevin',dept:'Engineering',msg:'"The unit tests passed. In a dream I had."'},
+  // Brenda — Reception
+  {name:'Brenda',dept:'Reception',msg:'"The phone keeps making phone noises."'},
+  {name:'Brenda',dept:'Reception',msg:'"Someone left a computer in the microwave."'},
+  {name:'Brenda',dept:'Reception',msg:'"The front door WiFi is leaking outside."'},
+  {name:'Brenda',dept:'Reception',msg:'"A man is here to fix the internet. He has a shovel?"'},
+  {name:'Brenda',dept:'Reception',msg:'"My screensaver is holding me hostage."'},
+  {name:'Brenda',dept:'Reception',msg:'"There\'s a blinking light and it won\'t stop judging me."'},
+  {name:'Brenda',dept:'Reception',msg:'"A courier delivered a floppy disk. What is it?"'},
+  {name:'Brenda',dept:'Reception',msg:'"My desk phone is ringing but nobody is calling."'},
+  {name:'Brenda',dept:'Reception',msg:'"The visitor WiFi is connecting to the toaster."'},
+  {name:'Brenda',dept:'Reception',msg:'"I pressed a button and the fire alarm went off."'},
+  {name:'Brenda',dept:'Reception',msg:'"Someone plugged a fan into the server rack."'},
+  {name:'Brenda',dept:'Reception',msg:'"A pigeon walked in and sat on a keyboard."'},
+  {name:'Brenda',dept:'Reception',msg:'"The vending machine is sending emails."'},
+  {name:'Brenda',dept:'Reception',msg:'"I can hear the printer crying."'},
+  {name:'Brenda',dept:'Reception',msg:'"Someone called asking for the WiFi password in morse code."'},
+  // Derek — Finance
+  {name:'Derek',dept:'Finance',msg:'"Excel just laughed at me. Can software do that?"'},
+  {name:'Derek',dept:'Finance',msg:'"I put the budget in the wrong spreadsheet. There are 400."'},
+  {name:'Derek',dept:'Finance',msg:'"My calculator app says I owe the company money?"'},
+  {name:'Derek',dept:'Finance',msg:'"Can you make the numbers go up instead of down?"'},
+  {name:'Derek',dept:'Finance',msg:'"I formatted my hard drive thinking it meant pretty."'},
+  {name:'Derek',dept:'Finance',msg:'"I accidentally invoiced myself."'},
+  {name:'Derek',dept:'Finance',msg:'"My pie chart looks like an actual pie. Help."'},
+  {name:'Derek',dept:'Finance',msg:'"The decimal points are in the wrong country."'},
+  {name:'Derek',dept:'Finance',msg:'"I divided by zero and the spreadsheet is angry."'},
+  {name:'Derek',dept:'Finance',msg:'"Payroll went out twice. Actually, three times."'},
+  {name:'Derek',dept:'Finance',msg:'"I saved over the budget with a photo of my lunch."'},
+  {name:'Derek',dept:'Finance',msg:'"There\'s a formula in here that references feelings."'},
+  {name:'Derek',dept:'Finance',msg:'"My spreadsheet has more tabs than my browser."'},
+  {name:'Derek',dept:'Finance',msg:'"The profit column is running away from the loss column."'},
+  {name:'Derek',dept:'Finance',msg:'"I need you to audit this PDF. It\'s suspicious."'},
+  // Nigel — The Basement
+  {name:'Nigel',dept:'The Basement',msg:'"The printer has become sentient and is printing demands."'},
+  {name:'Nigel',dept:'The Basement',msg:'"I\'ve been on hold with IT for three days. That\'s you."'},
+  {name:'Nigel',dept:'The Basement',msg:'"Something lives in the server room. It has a name badge."'},
+  {name:'Nigel',dept:'The Basement',msg:'"The fax machine keeps calling me at home. I\'m scared."'},
+  {name:'Nigel',dept:'The Basement',msg:'"My desk phone rang and it was just breathing."'},
+  {name:'Nigel',dept:'The Basement',msg:'"I found a cable. It goes into the wall and never comes back."'},
+  {name:'Nigel',dept:'The Basement',msg:'"The lights flicker when I open Outlook."'},
+  {name:'Nigel',dept:'The Basement',msg:'"There are more ethernet cables than floor tiles down here."'},
+  {name:'Nigel',dept:'The Basement',msg:'"I unplugged a cable and three floors lost power."'},
+  {name:'Nigel',dept:'The Basement',msg:'"My chair rolled into the server rack. Things are beeping."'},
+  {name:'Nigel',dept:'The Basement',msg:'"The backup tapes are growing mould. Is that normal?"'},
+  {name:'Nigel',dept:'The Basement',msg:'"A server just made a noise I\'ve never heard before."'},
+  {name:'Nigel',dept:'The Basement',msg:'"I think the UPS is plotting against me."'},
+  {name:'Nigel',dept:'The Basement',msg:'"Someone labelled all the cables \'mystery\' and left."'},
+  {name:'Nigel',dept:'The Basement',msg:'"The fire extinguisher expired in 2003."'},
+  // Doris — Canteen
+  {name:'Doris',dept:'Canteen',msg:'"The microwave crashed. Like, software crashed."'},
+  {name:'Doris',dept:'Canteen',msg:'"Someone connected the coffee machine to Slack."'},
+  {name:'Doris',dept:'Canteen',msg:'"The fridge is sending push notifications."'},
+  {name:'Doris',dept:'Canteen',msg:'"I need the WiFi password for the sandwich press."'},
+  {name:'Doris',dept:'Canteen',msg:'"The dishwasher is trying to print."'},
+  {name:'Doris',dept:'Canteen',msg:'"My soup recipe is stuck in a spreadsheet."'},
+  {name:'Doris',dept:'Canteen',msg:'"The oven has a BSOD."'},
+  {name:'Doris',dept:'Canteen',msg:'"Someone programmed the kettle to play music."'},
+  {name:'Doris',dept:'Canteen',msg:'"The vending machine wants a software update."'},
+  {name:'Doris',dept:'Canteen',msg:'"Can you fix the toaster? It\'s on the network."'},
+  // Barry — Security
+  {name:'Barry',dept:'Security',msg:'"The CCTV is showing last Tuesday on repeat."'},
+  {name:'Barry',dept:'Security',msg:'"Someone badged into a cupboard and can\'t get out."'},
+  {name:'Barry',dept:'Security',msg:'"The door locks think it\'s Sunday."'},
+  {name:'Barry',dept:'Security',msg:'"I accidentally locked everyone out of the building."'},
+  {name:'Barry',dept:'Security',msg:'"The fire exit is asking for a password."'},
+  {name:'Barry',dept:'Security',msg:'"The car park barrier has gone rogue."'},
+  {name:'Barry',dept:'Security',msg:'"My walkie-talkie is picking up a pizza order."'},
+  {name:'Barry',dept:'Security',msg:'"The alarm is going off but only on the second floor."'},
+  {name:'Barry',dept:'Security',msg:'"I swiped my Tesco Clubcard instead of my badge."'},
+  {name:'Barry',dept:'Security',msg:'"The motion sensors think the plant is a person."'},
 ];
+let usedTicketMsgs = [];
 const TICKET_ICONS = ['📋','📝','🚨','📌','⚠️'];
 
 // ═══════════════════════════════════════
@@ -884,17 +956,24 @@ function dismissTicket(){
   }, 1400);
 }
 
+function getUniqueTicket(){
+  if(usedTicketMsgs.length>=ALL_TICKET_MSGS.length) usedTicketMsgs=[];
+  const available=ALL_TICKET_MSGS.filter((_,i)=>!usedTicketMsgs.includes(i));
+  const idx=ALL_TICKET_MSGS.indexOf(available[Math.floor(Math.random()*available.length)]);
+  usedTicketMsgs.push(idx);
+  return ALL_TICKET_MSGS[idx];
+}
+
 function triggerTicket(){
   if(!state.running) return;
   state.running=false; // pause
-  const person=TICKET_PEOPLE[Math.floor(Math.random()*TICKET_PEOPLE.length)];
-  const msg=person.msgs[Math.floor(Math.random()*person.msgs.length)];
+  const ticket=getUniqueTicket();
   const icon=TICKET_ICONS[Math.floor(Math.random()*TICKET_ICONS.length)];
   sfxTicket();
   document.getElementById('ticket-icon').textContent=icon;
-  document.getElementById('ticket-name').textContent=person.name;
-  document.getElementById('ticket-dept').textContent=`from ${person.dept}`;
-  document.getElementById('ticket-msg').textContent=msg;
+  document.getElementById('ticket-name').textContent=ticket.name;
+  document.getElementById('ticket-dept').textContent=`from ${ticket.dept}`;
+  document.getElementById('ticket-msg').textContent=ticket.msg;
   document.getElementById('ticket-reply').style.display='none';
   const dismissBtn=document.getElementById('ticket-dismiss-btn');
   dismissBtn.style.display='none';
@@ -1117,6 +1196,7 @@ function startBlackouts(){
 function startGame(){
   initAudio();
   state.level=1; state.score=0;
+  usedTicketMsgs=[]; usedCrisisMsgs=[];
   document.getElementById('start-screen').classList.add('hidden');
   document.getElementById('gameover-screen').classList.add('hidden');
   document.getElementById('level-screen').classList.add('hidden');
@@ -1130,7 +1210,6 @@ const CRISIS_AVOIDED = [
   'LEGAL PROCEEDINGS AVOIDED!',
   'ENTIRE VILLAGE SAVED!',
   'NUCLEAR MELTDOWN PREVENTED!',
-  'CEO\'S BROWSER HISTORY DELETED IN TIME!',
   'PRINTER FIRE EXTINGUISHED!',
   'KEVIN\'S CODE ROLLED BACK!',
   'KAREN\'S EMAIL FONT RESTORED!',
@@ -1161,8 +1240,39 @@ const CRISIS_AVOIDED = [
   'SENTIENT CHATBOT CONTAINED!',
   'DAVE FOUND THE BACKUP! (IT WAS IN HIS LUNCH BOX)',
   'FIRE ALARM WAS JUST TOAST!',
-  'CEO LEARNED WHAT A PDF IS!',
+  'TOASTER DISCONNECTED FROM MAINFRAME!',
+  'REPLY-ALL APOCALYPSE CONTAINED!',
+  'SOMEONE FOUND THE ETHERNET CABLE!',
+  'BARRY\'S CLUBCARD REVOKED FROM SECURITY!',
+  'THE SPREADSHEET HAS BEEN CALMED DOWN!',
+  'DORIS\'S KETTLE FIRMWARE ROLLED BACK!',
+  'FRIDGE NOTIFICATIONS SILENCED!',
+  'CAR PARK BARRIER STOOD DOWN!',
+  'NIGEL RESCUED FROM THE BASEMENT!',
+  'PASSWORD CHANGED FROM PASSWORD123!',
+  'DEREK\'S PIE CHART IS A CHART AGAIN!',
+  'THE STAPLER HAS BEEN RETURNED!',
+  'BRENDA\'S SCREENSAVER RELEASED HER!',
+  'SERVER ROOM CREATURE GIVEN A BADGE!',
+  'THE FAX MACHINE HAS BEEN SEDATED!',
+  'CHAD\'S DONGLE SITUATION RESOLVED!',
+  'CANTEEN DISHWASHER STOPPED PRINTING!',
+  'ALL MYSTERY CABLES LABELLED!',
+  'MOTION SENSOR STOPPED WATCHING PLANT!',
+  'DESKTOP WALLPAPER COPYRIGHTED!',
+  'BLUETOOTH REMOVED FROM TEETH!',
+  'SANDWICH PRESS TAKEN OFF WIFI!',
+  'THE BUILDING STILL EXISTS!',
+  'SOMEONE\'S CAT PHOTOS RECALLED!',
+  'STACK OVERFLOW IS BACK UP!',
+  'VENDING MACHINE SOFTWARE UPDATED!',
+  'DAVE REMEMBERED HIS PASSWORD!',
+  'THE THIRD FLOOR HAS POWER AGAIN!',
+  'PAYROLL ONLY WENT OUT ONCE THIS TIME!',
+  'FIRE EXTINGUISHER REPLACED! (EXPIRED 2003)',
+  'OUTLOOK STOPPED BEING PESSIMISTIC!',
 ];
+let usedCrisisMsgs = [];
 
 function levelComplete(){
   state.running=false;
@@ -1178,7 +1288,11 @@ function levelComplete(){
   if(state.score>highScore) highScore=state.score;
   gameWrap.classList.add('server-saved');
   setTimeout(()=>gameWrap.classList.remove('server-saved'),1800);
-  const crisis=CRISIS_AVOIDED[Math.floor(Math.random()*CRISIS_AVOIDED.length)];
+  if(usedCrisisMsgs.length>=CRISIS_AVOIDED.length) usedCrisisMsgs=[];
+  const availableCrisis=CRISIS_AVOIDED.filter((_,i)=>!usedCrisisMsgs.includes(i));
+  const crisisIdx=CRISIS_AVOIDED.indexOf(availableCrisis[Math.floor(Math.random()*availableCrisis.length)]);
+  usedCrisisMsgs.push(crisisIdx);
+  const crisis=CRISIS_AVOIDED[crisisIdx];
   document.getElementById('level-title').textContent=crisis;
   document.getElementById('level-msg').innerHTML=`Server ${state.level} is back online!<br>Time bonus: +${timeBonus}`;
   document.getElementById('level-score').textContent='SCORE: '+state.score;
