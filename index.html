@@ -417,20 +417,87 @@ function sfxEmailArrive(){
 function sfxEmailRead(){playTone(880,0.06,'square',0.08);setTimeout(()=>playTone(1100,0.08,'square',0.06),60);}
 function sfxEmailMissed(){playTone(250,0.12,'triangle',0.06);setTimeout(()=>playTone(180,0.15,'triangle',0.05),120);}
 
+// Dave's cough — raspy noise burst + throat rumble
+function sfxCough(){
+  if(!audioCtx||!soundEnabled) return;
+  const t=audioCtx.currentTime;
+  // Noise burst (the "kh" part)
+  const bs=audioCtx.sampleRate*0.12, buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<bs;i++) d[i]=(Math.random()*2-1)*Math.max(0,1-i/bs*1.5);
+  const n=audioCtx.createBufferSource(),ng=audioCtx.createGain(),filt=audioCtx.createBiquadFilter();
+  n.buffer=buf; filt.type='bandpass'; filt.frequency.value=800; filt.Q.value=2;
+  ng.gain.setValueAtTime(0.18,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+  n.connect(filt); filt.connect(ng); ng.connect(audioCtx.destination); n.start(t); n.stop(t+0.15);
+  // Low rumble (the chest part)
+  const o=audioCtx.createOscillator(),og=audioCtx.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(90,t); o.frequency.exponentialRampToValueAtTime(50,t+0.12);
+  og.gain.setValueAtTime(0.08,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.14);
+  o.connect(og); og.connect(audioCtx.destination); o.start(t); o.stop(t+0.14);
+  // Second shorter burst (the "ack" follow-up)
+  setTimeout(()=>{
+    if(!audioCtx||!soundEnabled) return;
+    const t2=audioCtx.currentTime;
+    const bs2=audioCtx.sampleRate*0.06,buf2=audioCtx.createBuffer(1,bs2,audioCtx.sampleRate),d2=buf2.getChannelData(0);
+    for(let i=0;i<bs2;i++) d2[i]=(Math.random()*2-1)*Math.max(0,1-i/bs2*2);
+    const n2=audioCtx.createBufferSource(),ng2=audioCtx.createGain(),f2=audioCtx.createBiquadFilter();
+    n2.buffer=buf2; f2.type='bandpass'; f2.frequency.value=600; f2.Q.value=3;
+    ng2.gain.setValueAtTime(0.1,t2); ng2.gain.exponentialRampToValueAtTime(0.001,t2+0.08);
+    n2.connect(f2); f2.connect(ng2); ng2.connect(audioCtx.destination); n2.start(t2); n2.stop(t2+0.08);
+  },140);
+}
+
 // Background music
+// Normal music
 const BASS_PATTERNS=[[65,0,82,0,98,0,82,0],[73,0,98,0,110,0,98,0],[87,0,110,0,131,0,110,0],[82,0,98,0,110,0,131,0]];
 const MELODY_NOTES=[262,294,330,349,392,440,494,523,587,659];
+
+// Boss music — faster, aggressive, chromatic chaos
+const BOSS_BASS=[[55,55,73,0,55,73,82,0],[65,65,87,0,65,87,98,0],[73,73,98,0,73,98,110,0],[55,73,82,98,110,98,82,73]];
+const BOSS_MELODY=[311,330,349,370,392,415,440,466,494,523,554,587,622,659,698,740,784];
+
+function isBossLevel(){ return state.level % 5 === 0 && state.level > 0; }
+
 let musicStep=0, musicInterval=null, currentBassPattern=0;
 function startMusic() {
   if(musicInterval) clearInterval(musicInterval); musicStep=0; currentBassPattern=0;
+  const boss = isBossLevel();
+  const bpm = boss ? 190 : 140;
+  const bassPatterns = boss ? BOSS_BASS : BASS_PATTERNS;
+  const melodyNotes = boss ? BOSS_MELODY : MELODY_NOTES;
+  const bassVol = boss ? 0.05 : 0.035;
+  const melodyVol = boss ? 0.035 : 0.02;
+  const melodyChance = boss ? 0.25 : 0.4; // lower = more notes
+  const noiseVol = boss ? 0.02 : 0.012;
+
   musicInterval=setInterval(()=>{
     if(!soundEnabled||!audioCtx||!state.running) return;
-    const p=BASS_PATTERNS[currentBassPattern%BASS_PATTERNS.length], bn=p[musicStep%p.length];
-    if(bn>0) playTone(bn,0.1,'triangle',0.035);
-    if(musicStep%2===0&&Math.random()>0.4) playTone(MELODY_NOTES[Math.floor(Math.random()*MELODY_NOTES.length)],0.08,'square',0.02);
-    if(audioCtx&&soundEnabled){const bs=audioCtx.sampleRate*0.015,buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate),dd=buf.getChannelData(0);for(let i=0;i<bs;i++)dd[i]=(Math.random()*2-1);const s=audioCtx.createBufferSource(),g=audioCtx.createGain();s.buffer=buf;g.gain.value=0.012;s.connect(g);g.connect(audioCtx.destination);s.start();s.stop(audioCtx.currentTime+0.015);}
+    const p=bassPatterns[currentBassPattern%bassPatterns.length], bn=p[musicStep%p.length];
+    if(bn>0) playTone(bn, boss?0.06:0.1, boss?'sawtooth':'triangle', bassVol);
+    // Boss: extra sub-bass hit on beats 0 and 4
+    if(boss && bn>0 && musicStep%4===0) playTone(bn*0.5, 0.08, 'sine', 0.04);
+    // Melody
+    if(musicStep%2===0&&Math.random()>melodyChance){
+      playTone(melodyNotes[Math.floor(Math.random()*melodyNotes.length)], boss?0.05:0.08, 'square', melodyVol);
+      // Boss: occasional dissonant harmony
+      if(boss && Math.random()>0.6) playTone(melodyNotes[Math.floor(Math.random()*melodyNotes.length)]*1.06, 0.04, 'sawtooth', 0.015);
+    }
+    // Hi-hat noise
+    if(audioCtx&&soundEnabled){
+      const bs=audioCtx.sampleRate*(boss?0.01:0.015),buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate),dd=buf.getChannelData(0);
+      for(let i=0;i<bs;i++)dd[i]=(Math.random()*2-1);
+      const s=audioCtx.createBufferSource(),g=audioCtx.createGain();s.buffer=buf;g.gain.value=noiseVol;
+      s.connect(g);g.connect(audioCtx.destination);s.start();s.stop(audioCtx.currentTime+bs/audioCtx.sampleRate);
+    }
+    // Boss: extra snare hit on off-beats
+    if(boss && musicStep%4===2 && audioCtx && soundEnabled){
+      const sbs=audioCtx.sampleRate*0.03,sbuf=audioCtx.createBuffer(1,sbs,audioCtx.sampleRate),sd=sbuf.getChannelData(0);
+      for(let i=0;i<sbs;i++)sd[i]=(Math.random()*2-1)*Math.max(0,1-i/sbs);
+      const sn=audioCtx.createBufferSource(),sg=audioCtx.createGain();sn.buffer=sbuf;sg.gain.value=0.04;
+      sn.connect(sg);sg.connect(audioCtx.destination);sn.start();sn.stop(audioCtx.currentTime+0.03);
+      playTone(180,0.04,'triangle',0.03); // snare body
+    }
     musicStep++; if(musicStep%16===0) currentBassPattern++;
-  }, (60000/140)/2);
+  }, (60000/bpm)/2);
 }
 function stopMusic() { if(musicInterval){clearInterval(musicInterval);musicInterval=null;} }
 function startCountdownTick() {
@@ -653,6 +720,8 @@ let state = {
   phoneTimerInterval: null,
   email: null, // { x, y, timer, maxTimer }
   emailTimerInterval: null,
+  // Dave is sick
+  sick: false,
 };
 
 // DOM
@@ -709,6 +778,7 @@ function initLevel(){
   });
   state.order=shuffle([...Array(numItems).keys()]);
   board.style.gridTemplateColumns=`repeat(${gs},1fr)`;
+  rollForSick();
   updateDaveTitle(); render(); renderOrder(); updateHUD();
 }
 
@@ -833,7 +903,7 @@ function movePlayer(dx,dy){
   const nx=state.player.x+dx, ny=state.player.y+dy;
   if(nx<0||nx>=state.gridSize||ny<0||ny>=state.gridSize) return;
   moveThrottle = true;
-  setTimeout(() => moveThrottle = false, 80);
+  setTimeout(() => moveThrottle = false, state.sick ? 130 : 80);
 
   state.player.x=nx; state.player.y=ny;
   sfxMove();
@@ -1162,6 +1232,55 @@ function startEmailSpawner(){
 }
 
 // ═══════════════════════════════════════
+//  DAVE IS SICK TODAY
+// ═══════════════════════════════════════
+const SICK_MESSAGES = [
+  'Dave is feeling rough today...',
+  'Dave shouldn\'t have had that canteen curry...',
+  'Dave caught something from the server room...',
+  'Dave sneezed on the keyboard again...',
+  'Dave is soldiering on despite the man-flu...',
+  'Dave insists he\'s fine. He is not fine.',
+  'Dave blames the air conditioning...',
+  'Dave\'s immune system has crashed too...',
+  'Dave is running at 50% capacity...',
+  'Dave says it\'s just allergies. It\'s not.',
+];
+let coughInterval=null;
+let usedSickMsgs=[];
+
+function rollForSick(){
+  // 25% chance Dave is sick each level, increases slightly at higher levels
+  state.sick = Math.random() < Math.min(0.25 + state.level * 0.02, 0.45);
+  if(state.sick){
+    if(usedSickMsgs.length>=SICK_MESSAGES.length) usedSickMsgs=[];
+    const available=SICK_MESSAGES.filter((_,i)=>!usedSickMsgs.includes(i));
+    const idx=SICK_MESSAGES.indexOf(available[Math.floor(Math.random()*available.length)]);
+    usedSickMsgs.push(idx);
+    document.getElementById('subtitle').textContent=SICK_MESSAGES[idx];
+    document.getElementById('subtitle').style.color='#66bb44';
+  } else {
+    document.getElementById('subtitle').textContent='DAVE FROM IT vs THE MELTDOWN';
+    document.getElementById('subtitle').style.color='#7799aa';
+  }
+}
+
+function startCoughing(){
+  stopCoughing();
+  if(!state.sick) return;
+  function scheduleCough(){
+    if(!state.sick||!state.running) return;
+    const delay=3000+Math.random()*5000; // 3-8 seconds
+    coughInterval=setTimeout(()=>{
+      if(state.running && state.sick && soundEnabled) sfxCough();
+      scheduleCough();
+    },delay);
+  }
+  scheduleCough();
+}
+function stopCoughing(){if(coughInterval){clearTimeout(coughInterval);coughInterval=null;}}
+
+// ═══════════════════════════════════════
 //  BLACKOUTS
 // ═══════════════════════════════════════
 function spawnBlackout(){
@@ -1197,13 +1316,13 @@ function startBlackouts(){
 function startGame(){
   initAudio();
   state.level=1; state.score=0;
-  usedTicketMsgs=[]; usedCrisisMsgs=[];
+  usedTicketMsgs=[]; usedCrisisMsgs=[]; usedSickMsgs=[];
   document.getElementById('start-screen').classList.add('hidden');
   document.getElementById('gameover-screen').classList.add('hidden');
   document.getElementById('level-screen').classList.add('hidden');
   document.getElementById('promo-screen').classList.add('hidden');
   state.running=true;
-  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner();
+  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner(); startCoughing();
 }
 
 const CRISIS_AVOIDED = [
@@ -1282,7 +1401,7 @@ function levelComplete(){
   if(npcSpawnInterval)clearInterval(npcSpawnInterval);
   if(phoneSpawnInterval)clearInterval(phoneSpawnInterval);
   if(emailSpawnInterval)clearInterval(emailSpawnInterval);
-  stopMusic(); stopCountdownTick();
+  stopMusic(); stopCountdownTick(); stopCoughing();
   sfxLevelComplete();
   const timeBonus=Math.floor(state.timeLeft/10)*5;
   state.score+=timeBonus;
@@ -1317,7 +1436,7 @@ function showPromotion(promo){
 }
 function continueToLevel(){
   state.running=true;
-  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner();
+  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner(); startCoughing();
 }
 function gameOver(){
   state.running=false;
@@ -1326,7 +1445,7 @@ function gameOver(){
   if(npcSpawnInterval)clearInterval(npcSpawnInterval);
   if(phoneSpawnInterval)clearInterval(phoneSpawnInterval);
   if(emailSpawnInterval)clearInterval(emailSpawnInterval);
-  stopMusic(); stopCountdownTick();
+  stopMusic(); stopCountdownTick(); stopCoughing();
   sfxGameOver();
   const isNew=state.score>highScore; if(isNew) highScore=state.score;
   document.getElementById('final-score').textContent='SCORE: '+state.score;
