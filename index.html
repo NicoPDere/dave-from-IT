@@ -255,6 +255,7 @@
 <body>
 
 <button id="sound-toggle" title="Toggle Sound">🔊</button>
+<div id="sound-reminder" style="display:none;position:fixed;top:40px;right:8px;font-family:'Press Start 2P',monospace;font-size:0.3rem;color:#ffaa00;background:#111128;border:2px solid #ffaa00;border-radius:4px;padding:4px 8px;z-index:200;animation:nextPulse 0.8s ease-in-out infinite alternate;">TAP TO RESUME SOUND</div>
 
 <!-- START SCREEN -->
 <div class="overlay" id="start-screen">
@@ -1426,24 +1427,67 @@ document.getElementById('sound-toggle').addEventListener('click',()=>{
   if(!soundEnabled){stopMusic();stopCountdownTick();}else if(state.running){startMusic();startCountdownTick();}
 });
 
-// Resume audio when returning to the app (mobile browsers suspend AudioContext)
+// ═══════════════════════════════════════
+//  MOBILE AUDIO RESUME SYSTEM
+// ═══════════════════════════════════════
+// Mobile browsers suspend AudioContext when tab loses focus.
+// They require a real user gesture (tap/click) to resume it.
+let audioNeedsResume = false;
+
+function resumeAudioFull(){
+  if(!audioCtx) return;
+  audioCtx.resume().then(()=>{
+    audioNeedsResume=false;
+    // Restart music and tick if game is active
+    if(state.running && soundEnabled){
+      stopMusic(); startMusic();
+      stopCountdownTick(); startCountdownTick();
+    }
+    // Hide the sound reminder if showing
+    const reminder=document.getElementById('sound-reminder');
+    if(reminder) reminder.style.display='none';
+  }).catch(()=>{});
+}
+
+// When page becomes visible again, try to resume (works on some browsers)
+// and flag that we need a user gesture if it doesn't work
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible' && audioCtx){
-    if(audioCtx.state==='suspended') audioCtx.resume();
-    if(state.running && soundEnabled){
-      startMusic();
-      startCountdownTick();
+    if(audioCtx.state==='suspended'){
+      audioNeedsResume=true;
+      // Try immediate resume (works on Android Chrome)
+      resumeAudioFull();
+      // If still suspended after attempt, show tap reminder
+      setTimeout(()=>{
+        if(audioCtx && audioCtx.state==='suspended' && soundEnabled){
+          const reminder=document.getElementById('sound-reminder');
+          if(reminder) reminder.style.display='block';
+        }
+      },200);
+    } else if(state.running && soundEnabled){
+      // Context is fine but intervals may have died
+      stopMusic(); startMusic();
+      stopCountdownTick(); startCountdownTick();
     }
   }
 });
-// Also handle focus event as a fallback for some mobile browsers
-window.addEventListener('focus',()=>{
-  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
-  if(state.running && soundEnabled){
-    startMusic();
-    startCountdownTick();
+
+// On ANY user gesture, resume audio if needed
+function onUserGesture(){
+  if(audioCtx && audioCtx.state==='suspended'){
+    resumeAudioFull();
+  } else if(audioNeedsResume && audioCtx){
+    audioNeedsResume=false;
+    if(state.running && soundEnabled){
+      stopMusic(); startMusic();
+      stopCountdownTick(); startCountdownTick();
+    }
+    const reminder=document.getElementById('sound-reminder');
+    if(reminder) reminder.style.display='none';
   }
-});
+}
+document.addEventListener('touchstart',onUserGesture,{passive:true});
+document.addEventListener('click',onUserGesture);
 </script>
 </body>
 </html>
