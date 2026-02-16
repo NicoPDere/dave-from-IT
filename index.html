@@ -66,7 +66,7 @@
   .cell {
     background: #1e2040; border-radius: 2px;
     display: flex; align-items: center; justify-content: center;
-    position: relative; transition: background 0.15s; aspect-ratio: 1; overflow: hidden;
+    position: relative; transition: background 0.15s; aspect-ratio: 1; overflow: visible;
   }
   .cell.alt { background: #232548; }
   .cell.blackout { background: #000000 !important; box-shadow: inset 0 0 10px #000; }
@@ -75,6 +75,32 @@
   .cell.wrong-flash { animation: wrongShake 0.3s; background: #661111 !important; }
   .cell.desk-cell { background: #2a2520 !important; border: 1px solid #554433; }
   .cell.npc-cell { background: #2a1a2a !important; }
+  /* Pulsing beacon rings */
+  .beacon { position: relative; }
+  .beacon::after {
+    content: ''; position: absolute; top: -3px; left: -3px; right: -3px; bottom: -3px;
+    border-radius: 4px; border: 2px solid var(--beacon-color, #44cc44);
+    animation: beaconPulse 1s ease-out infinite; pointer-events: none; z-index: 2;
+  }
+  @keyframes beaconPulse {
+    0% { transform: scale(0.85); opacity: 1; }
+    100% { transform: scale(1.2); opacity: 0; }
+  }
+  .beacon-green { --beacon-color: #44ee44; }
+  .beacon-blue { --beacon-color: #4488ff; }
+  .beacon-pink { --beacon-color: #ff66aa; }
+  .beacon-orange { --beacon-color: #ffaa44; }
+  /* Step indicator badge */
+  .step-badge {
+    position: absolute; top: -4px; left: -4px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #ff4466; color: white; font-size: 0.35rem;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    z-index: 3; border: 1px solid #cc2244;
+    animation: badgeBounce 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes badgeBounce { from { transform: scale(1); } to { transform: scale(1.15); } }
   @keyframes wrongShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
   .cell-content {
     display: flex; align-items: center; justify-content: center;
@@ -189,8 +215,9 @@
   .npc-waiting { animation: npcPulse 0.8s ease-in-out infinite alternate; }
   @keyframes npcPulse { from { opacity: 0.7; } to { opacity: 1; } }
   /* Side quest status bar */
-  #sidequest-bar { width: 100%; display: none; padding: 3px 6px; background: #1a1128; border: 1px solid #442255; border-radius: 3px; font-size: 0.25rem; color: #cc88ee; text-align: center; line-height: 1.5; flex-shrink: 0; }
-  #sidequest-bar.active { display: block; }
+  #sidequest-bar { width: 100%; display: none; padding: 5px 8px; background: #1a1128; border: 2px solid #663388; border-radius: 4px; font-size: 0.35rem; color: #ddaaff; text-align: center; line-height: 1.6; flex-shrink: 0; }
+  #sidequest-bar.active { display: block; animation: sqPulse 2s ease-in-out infinite alternate; }
+  @keyframes sqPulse { from { border-color: #663388; } to { border-color: #9944cc; box-shadow: 0 0 8px #9944cc44; } }
 </style>
 </head>
 <body>
@@ -543,24 +570,35 @@ function render(){
       // NPC person
       else if(state.npc && state.npc.x===x && state.npc.y===y){
         content.innerHTML=`<span class="npc-waiting">${state.npc.request.personEmoji}</span>`;
+        cell.classList.add('beacon','beacon-pink');
+        // Step badge: show step number based on phase
+        if(state.npc.phase==='delivered'){
+          const badge=document.createElement('div');badge.className='step-badge';badge.textContent='3';cell.appendChild(badge);
+        }
       }
       // Desk
       else if(state.npc && state.npc.deskX===x && state.npc.deskY===y){
         content.textContent='🗄️';
+        if(state.npc.phase==='gotItem'){
+          cell.classList.add('beacon','beacon-orange');
+          const badge=document.createElement('div');badge.className='step-badge';badge.textContent='2';cell.appendChild(badge);
+        }
       }
-      // NPC item (only if phase=waiting and not collected)
+      // NPC item (only if phase=waiting)
       else if(state.npc && state.npc.phase==='waiting' && state.npc.itemX===x && state.npc.itemY===y){
         content.textContent=state.npc.request.emoji;
+        cell.classList.add('beacon','beacon-pink');
+        const badge=document.createElement('div');badge.className='step-badge';badge.textContent='1';cell.appendChild(badge);
       }
       // Phone
       else if(state.phone && state.phone.x===x && state.phone.y===y){
-        content.innerHTML='<span class="npc-waiting">📞</span>';
-        cell.style.boxShadow='inset 0 0 8px #44cc44';
+        content.innerHTML='<span class="npc-waiting" style="font-size:clamp(1rem,5vw,1.8rem)">📞</span>';
+        cell.classList.add('beacon','beacon-green');
       }
       // Email
       else if(state.email && state.email.x===x && state.email.y===y){
-        content.innerHTML='<span class="npc-waiting">📧</span>';
-        cell.style.boxShadow='inset 0 0 8px #4488ee';
+        content.innerHTML='<span class="npc-waiting" style="font-size:clamp(1rem,5vw,1.8rem)">📧</span>';
+        cell.classList.add('beacon','beacon-blue');
       }
       // Regular item
       else {
@@ -815,9 +853,9 @@ function updateSidequestBar(){
   if(!state.npc){sidequestBar.classList.remove('active');return;}
   sidequestBar.classList.add('active');
   const r=state.npc.request;
-  if(state.npc.phase==='waiting') sidequestBar.innerHTML=`${r.person} needs: ${r.emoji} ${r.name}<br>Help them for +8s bonus time!`;
-  else if(state.npc.phase==='gotItem') sidequestBar.innerHTML=`Got ${r.emoji}! Bring to desk 🗄️ → +8s`;
-  else if(state.npc.phase==='delivered') sidequestBar.innerHTML=`Return to ${r.personEmoji} to claim +8s!`;
+  if(state.npc.phase==='waiting') sidequestBar.innerHTML=`❶ Pick up ${r.emoji} ${r.name} → +8s`;
+  else if(state.npc.phase==='gotItem') sidequestBar.innerHTML=`❷ Bring ${r.emoji} to 🗄️ desk → +8s`;
+  else if(state.npc.phase==='delivered') sidequestBar.innerHTML=`❸ Return to ${r.personEmoji} → +8s!`;
 }
 
 let npcSpawnInterval=null;
