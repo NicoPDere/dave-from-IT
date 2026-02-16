@@ -300,7 +300,7 @@
   <div id="ticket-name"></div>
   <div id="ticket-dept"></div>
   <div id="ticket-msg"></div>
-  <div id="ticket-tap" style="font-family:'Press Start 2P',monospace;font-size:0.3rem;color:#556677;margin-top:8px;animation:nextPulse 0.8s ease-in-out infinite alternate;">[TAP TO DISMISS]</div>
+  <button id="ticket-dismiss-btn" class="btn" style="font-size:0.4rem;padding:8px 16px;background:#556688;margin-top:10px;display:none;">OK FINE</button>
   <div id="ticket-reply" style="font-family:'Press Start 2P',monospace;font-size:0.5rem;color:#44ee88;text-align:center;margin-top:10px;display:none;text-shadow:0 0 8px #44ee8866;line-height:2;"></div>
 </div>
 
@@ -462,11 +462,85 @@ function checkPromotion(){const p=getCurrentPromotion();const i=PROMOTIONS.index
 //  TICKET INTERRUPT PEOPLE
 // ═══════════════════════════════════════
 const TICKET_PEOPLE = [
-  { name: 'Karen', dept: 'Marketing', msgs: ['"How does email work again?"','"I lost my computer. Like, the whole thing."','"The internet deleted itself."','"My mouse is upside down."','"Can you make the logo bigger in the database?"'] },
-  { name: 'Chad', dept: 'Sales', msgs: ['"I spilled coffee on the server. Which button is undo?"','"My spreadsheet is haunted, rows keep appearing."','"I saved a file but now my desk drawer won\'t open?"','"I typed Google into Google and it broke."','"Can you install Tinder on my work laptop?"'] },
-  { name: 'Greg', dept: 'Legal', msgs: ['"I need you to print the entire internet."','"Someone hacked my password. It was password123."','"My screen is too bright, I think it has a virus."','"I unplugged something and now the lights are off."','"The PDF is angry at me."'] },
-  { name: 'Susan', dept: 'Management', msgs: ['"Where is the ANY key?"','"I deleted the recycle bin, can you recycle it back?"','"My laptop won\'t turn on. No I haven\'t plugged it in, why?"','"The WiFi tastes funny today."','"Can you make Excel more exciting?"'] },
-  { name: 'Kevin', dept: 'Engineering', msgs: ['"I pushed to prod and now the building is on fire."','"The database is upside down."','"I accidentally mass-emailed my cat photos to all clients."','"Who put a firewall in front of my fire?"','"I rm -rf\'d something important. What was the company called again?"'] },
+  { name: 'Karen', dept: 'Marketing', msgs: [
+    '"How does email work again?"','"I lost my computer. Like, the whole thing."',
+    '"The internet deleted itself."','"My mouse is upside down."',
+    '"Can you make the logo bigger in the database?"',
+    '"My screen went black. I think it\'s dead. Oh wait it was off."',
+    '"I emailed a file to myself but I can\'t find me."',
+    '"The printer smells like burning ambition."',
+    '"Can you make the website more blue but also less blue?"',
+    '"I accidentally set my out-of-office to forever."',
+  ]},
+  { name: 'Chad', dept: 'Sales', msgs: [
+    '"I spilled coffee on the server. Which button is undo?"',
+    '"My spreadsheet is haunted, rows keep appearing."',
+    '"I saved a file but now my desk drawer won\'t open?"',
+    '"I typed Google into Google and it broke."',
+    '"Can you install Tinder on my work laptop?"',
+    '"My mouse won\'t move. Yes I\'m using the stapler."',
+    '"I need you to download more RAM for my phone."',
+    '"Where do I put the stamp on an email?"',
+    '"I replied all to the entire company. Twice."',
+    '"Can you make my laptop lighter? It\'s too heavy."',
+  ]},
+  { name: 'Greg', dept: 'Legal', msgs: [
+    '"I need you to print the entire internet."',
+    '"Someone hacked my password. It was password123."',
+    '"My screen is too bright, I think it has a virus."',
+    '"I unplugged something and now the lights are off."',
+    '"The PDF is angry at me."',
+    '"I need to fax this website."',
+    '"My computer is in Spanish and I don\'t speak Italian."',
+    '"Can you sue the WiFi?"',
+    '"I accidentally emailed our competitor our business plan."',
+    '"The cloud is full. Can you empty it?"',
+  ]},
+  { name: 'Susan', dept: 'Management', msgs: [
+    '"Where is the ANY key?"',
+    '"I deleted the recycle bin, can you recycle it back?"',
+    '"My laptop won\'t turn on. No I haven\'t plugged it in, why?"',
+    '"The WiFi tastes funny today."',
+    '"Can you make Excel more exciting?"',
+    '"My password expired. Can you make it not expire?"',
+    '"I need you to put the internet on a USB stick."',
+    '"Can you teach my laptop to take notes for me?"',
+    '"I held the laptop upside down and the files fell out."',
+    '"The calendar app won\'t add more hours to Friday."',
+  ]},
+  { name: 'Kevin', dept: 'Engineering', msgs: [
+    '"I pushed to prod and now the building is on fire."',
+    '"The database is upside down."',
+    '"I accidentally mass-emailed my cat photos to all clients."',
+    '"Who put a firewall in front of my fire?"',
+    '"I rm -rf\'d something important. What was the company called again?"',
+    '"I asked ChatGPT to fix it and now there are two bugs."',
+    '"The server room is flooding. I may have watered the cloud."',
+    '"I turned it off but I can\'t find the on."',
+    '"My code works on my machine. Can we ship my machine?"',
+    '"I accidentally automated myself out of a job."',
+  ]},
+  { name: 'Brenda', dept: 'Reception', msgs: [
+    '"The phone keeps making phone noises."',
+    '"Someone left a computer in the microwave."',
+    '"The front door WiFi is leaking outside."',
+    '"A man is here to fix the internet. He has a shovel?"',
+    '"Can you help? My screensaver is holding me hostage."',
+  ]},
+  { name: 'Derek', dept: 'Finance', msgs: [
+    '"Excel just laughed at me. Can software do that?"',
+    '"I put the budget in the wrong spreadsheet. There are 400."',
+    '"My calculator app says I owe the company money?"',
+    '"Can you make the numbers go up instead of down?"',
+    '"I formatted my hard drive thinking it meant making it pretty."',
+  ]},
+  { name: 'Nigel', dept: 'The Basement', msgs: [
+    '"The printer has become sentient and is printing its demands."',
+    '"I\'ve been on hold with IT for three days. Oh, that\'s you."',
+    '"Something is living in the server room. It has a name badge."',
+    '"The fax machine keeps calling me at home. I\'m scared."',
+    '"My desk phone rang and when I answered it was just breathing."',
+  ]},
 ];
 const TICKET_ICONS = ['📋','📝','🚨','📌','⚠️'];
 
@@ -787,6 +861,28 @@ const DAVE_REPLIES = [
   '"Have you submitted a ticket?"'
 ];
 let ticketDismissHandler=null;
+let ticketActive=false;
+
+function dismissTicket(){
+  if(!ticketActive) return;
+  ticketActive=false;
+  const dismissBtn=document.getElementById('ticket-dismiss-btn');
+  dismissBtn.removeEventListener('click',dismissTicket);
+  dismissBtn.style.display='none';
+  // Show Dave's reply
+  const reply=DAVE_REPLIES[Math.floor(Math.random()*DAVE_REPLIES.length)];
+  const replyEl=document.getElementById('ticket-reply');
+  replyEl.textContent='Dave: '+reply;
+  replyEl.style.display='block';
+  sfxLightOn();
+  // Auto close after showing reply
+  setTimeout(()=>{
+    document.getElementById('ticket-overlay').classList.remove('active');
+    addTicketItems();
+    state.running=true;
+    render(); renderOrder(); updateHUD();
+  }, 1400);
+}
 
 function triggerTicket(){
   if(!state.running) return;
@@ -799,37 +895,19 @@ function triggerTicket(){
   document.getElementById('ticket-name').textContent=person.name;
   document.getElementById('ticket-dept').textContent=`from ${person.dept}`;
   document.getElementById('ticket-msg').textContent=msg;
-  document.getElementById('ticket-tap').style.display='block';
   document.getElementById('ticket-reply').style.display='none';
+  const dismissBtn=document.getElementById('ticket-dismiss-btn');
+  dismissBtn.style.display='none';
   const overlay=document.getElementById('ticket-overlay');
   overlay.classList.add('active');
+  ticketActive=true;
 
-  // Remove old handler if any
-  if(ticketDismissHandler) overlay.removeEventListener('click',ticketDismissHandler);
-  if(ticketDismissHandler) overlay.removeEventListener('touchstart',ticketDismissHandler);
-
-  ticketDismissHandler=function(e){
-    e.preventDefault();
-    overlay.removeEventListener('click',ticketDismissHandler);
-    overlay.removeEventListener('touchstart',ticketDismissHandler);
-    // Show Dave's reply
-    const reply=DAVE_REPLIES[Math.floor(Math.random()*DAVE_REPLIES.length)];
-    const replyEl=document.getElementById('ticket-reply');
-    replyEl.textContent='Dave: '+reply;
-    replyEl.style.display='block';
-    document.getElementById('ticket-tap').style.display='none';
-    sfxLightOn();
-    // Auto close after showing reply
-    setTimeout(()=>{
-      overlay.classList.remove('active');
-      addTicketItems();
-      state.running=true;
-      render(); renderOrder(); updateHUD();
-    }, 1400);
-  };
-
-  overlay.addEventListener('click',ticketDismissHandler);
-  overlay.addEventListener('touchstart',ticketDismissHandler,{passive:false});
+  // Show dismiss button after a short delay to prevent accidental taps
+  setTimeout(()=>{
+    if(!ticketActive) return;
+    dismissBtn.style.display='block';
+    dismissBtn.addEventListener('click',dismissTicket,{once:true});
+  }, 800);
 }
 
 function addTicketItems(){
@@ -855,7 +933,7 @@ function startTicketTimer(){
   if(state.ticketInterval) clearInterval(state.ticketInterval);
   state.ticketInterval=setInterval(()=>{
     if(!state.running) return;
-    if(state.level>=2 && Math.random()<0.008){ // ~every 12s on average
+    if(state.level>=2 && Math.random()<0.025){ // ~every 4s on average — chaos!
       triggerTicket();
     }
   },1000);
@@ -1154,6 +1232,23 @@ document.addEventListener('keydown',e=>{
     case'ArrowDown':e.preventDefault();movePlayer(0,1);break;
     case'ArrowLeft':e.preventDefault();movePlayer(-1,0);break;
     case'ArrowRight':e.preventDefault();movePlayer(1,0);break;
+    case' ':case'Enter':
+      e.preventDefault();
+      // Start screen
+      if(!document.getElementById('start-screen').classList.contains('hidden')){startGame();return;}
+      // Game over — restart
+      if(!document.getElementById('gameover-screen').classList.contains('hidden')){startGame();return;}
+      // Level complete — next level
+      if(!document.getElementById('level-screen').classList.contains('hidden')){nextLevel();return;}
+      // Promotion — continue
+      if(!document.getElementById('promo-screen').classList.contains('hidden')){document.getElementById('promo-screen').classList.add('hidden');continueToLevel();return;}
+      // Ticket interrupt — dismiss if button visible
+      if(ticketActive){
+        const btn=document.getElementById('ticket-dismiss-btn');
+        if(btn.style.display!=='none') dismissTicket();
+        return;
+      }
+      break;
   }
 });
 
