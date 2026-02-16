@@ -1083,7 +1083,8 @@ function startTicketTimer(){
   if(state.ticketInterval) clearInterval(state.ticketInterval);
   state.ticketInterval=setInterval(()=>{
     if(!state.running) return;
-    if(state.level>=2 && Math.random()<0.025){ // ~every 4s on average — chaos!
+    const ticketChance = isBossLevel() ? 0.08 : 0.025; // boss = ~every 1.2s!
+    if(state.level>=2 && Math.random()<ticketChance){
       triggerTicket();
     }
   },1000);
@@ -1154,7 +1155,8 @@ function startNpcSpawner(){
   npcSpawnInterval=setInterval(()=>{
     if(!state.running||state.npc) return;
     // Spawn chance increases with level: 1.5% at lvl3, up to ~4% at high levels
-    const npcChance = Math.min(0.015 + (state.level - 3) * 0.004, 0.045);
+    const baseNpcChance = Math.min(0.015 + (state.level - 3) * 0.004, 0.045);
+    const npcChance = isBossLevel() ? baseNpcChance * 2.5 : baseNpcChance;
     if(state.level>=3 && Math.random()<npcChance) spawnNpc();
   },1000);
 }
@@ -1192,7 +1194,8 @@ function startPhoneSpawner(){
   if(phoneSpawnInterval) clearInterval(phoneSpawnInterval);
   phoneSpawnInterval=setInterval(()=>{
     if(!state.running||state.phone) return;
-    if(state.level>=2 && Math.random()<0.012) spawnPhone();
+    const phoneChance = isBossLevel() ? 0.04 : 0.012;
+    if(state.level>=2 && Math.random()<phoneChance) spawnPhone();
   },1000);
 }
 
@@ -1227,7 +1230,8 @@ function startEmailSpawner(){
   if(emailSpawnInterval) clearInterval(emailSpawnInterval);
   emailSpawnInterval=setInterval(()=>{
     if(!state.running||state.email) return;
-    if(state.level>=1 && Math.random()<0.01) spawnEmail();
+    const emailChance = isBossLevel() ? 0.035 : 0.01;
+    if(state.level>=1 && Math.random()<emailChance) spawnEmail();
   },1000);
 }
 
@@ -1306,7 +1310,8 @@ function startTimer(){
 }
 function startBlackouts(){
   if(state.blackoutInterval) clearInterval(state.blackoutInterval);
-  const iv=Math.max(2000,5000-state.level*400);
+  const baseIv=Math.max(2000,5000-state.level*400);
+  const iv=isBossLevel() ? Math.max(800, baseIv*0.4) : baseIv;
   state.blackoutInterval=setInterval(()=>{if(state.running) spawnBlackout();},iv);
 }
 
