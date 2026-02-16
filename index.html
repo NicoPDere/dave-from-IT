@@ -236,6 +236,7 @@
   @keyframes savedFlash { 0% { box-shadow: 0 0 0 #22cc44; } 50% { box-shadow: 0 0 40px #22cc4466; } 100% { box-shadow: 0 0 0 #22cc44; } }
   .penalty-popup { position: fixed; font-family: 'Press Start 2P', monospace; font-size: 0.6rem; color: #ee2222; pointer-events: none; z-index: 50; animation: penaltyFade 1s forwards; }
   @keyframes penaltyFade { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-40px); } }
+  #level-title { font-size: 0.75rem; color: #22cc44; text-shadow: 2px 2px 0 #0a6622; max-width: 340px; line-height: 1.8; }
   #promo-screen h2 { color: #ffaa00; text-shadow: 2px 2px 0 #886600; }
   .promo-title { font-size: 0.8rem !important; color: #ffdd44 !important; text-shadow: 0 0 10px #ffaa0066; }
   .promo-desc { font-size: 0.38rem !important; color: #aabbcc !important; font-style: italic; }
@@ -278,7 +279,7 @@
 
 <!-- LEVEL COMPLETE -->
 <div class="overlay hidden" id="level-screen">
-  <h2 style="color:#22cc44">SERVER SAVED!</h2>
+  <h2 style="color:#22cc44" id="level-title">SERVER SAVED!</h2>
   <p id="level-msg"></p>
   <p class="score-final" id="level-score"></p>
   <button class="btn" id="next-btn" style="background:#22aa44">NEXT SERVER</button>
@@ -1046,6 +1047,45 @@ function startGame(){
   initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner();
 }
 
+const CRISIS_AVOIDED = [
+  'COMPANY SAVED FROM BANKRUPTCY!',
+  'LEGAL PROCEEDINGS AVOIDED!',
+  'ENTIRE VILLAGE SAVED!',
+  'NUCLEAR MELTDOWN PREVENTED!',
+  'CEO\'S BROWSER HISTORY DELETED IN TIME!',
+  'PRINTER FIRE EXTINGUISHED!',
+  'KEVIN\'S CODE ROLLED BACK!',
+  'KAREN\'S EMAIL FONT RESTORED!',
+  'THE CLOUD HAS BEEN FOUND!',
+  'INTERNET UNDELETED!',
+  'SPREADSHEET EXORCISM COMPLETE!',
+  'DAVE AVOIDED HR COMPLAINT!',
+  'PRODUCTION DATABASE RECOVERED!',
+  'ALL 47 BROWSER TABS RESTORED!',
+  'WORLD WAR III CANCELLED!',
+  'ALIEN INVASION REPELLED!',
+  'ENTIRE FLOOR\'S WIFI RESTORED!',
+  'COMPANY CREDIT CARD UNFROZEN!',
+  'SUSAN\'S POWERPOINT SAVED!',
+  'RANSOMWARE DEFEATED WITH CTRL+Z!',
+  'THE MATRIX REBOOTED!',
+  'TIME-SPACE CONTINUUM STABILISED!',
+  'GREG\'S 10,000 PAGE PRINT JOB CANCELLED!',
+  'CHAD\'S TINDER UNINSTALLED FROM SERVER!',
+  'THE ANY KEY WAS FOUND!',
+  'PIGEON REMOVED FROM SERVER ROOM!',
+  'MICROWAVE STOPPED CRASHING WIFI!',
+  'INTERN\'S BITCOIN MINER REMOVED!',
+  'ENTIRE COMPANY UN-REPLY-ALL\'D!',
+  'OUTLOOK HAS FEELINGS AGAIN!',
+  'CURSED USB STICK DESTROYED!',
+  'HAUNTED PRINTER CLEANSED!',
+  'SENTIENT CHATBOT CONTAINED!',
+  'DAVE FOUND THE BACKUP! (IT WAS IN HIS LUNCH BOX)',
+  'FIRE ALARM WAS JUST TOAST!',
+  'CEO LEARNED WHAT A PDF IS!',
+];
+
 function levelComplete(){
   state.running=false;
   clearInterval(state.timerInterval); clearInterval(state.blackoutInterval); clearInterval(state.ticketInterval);
@@ -1060,6 +1100,8 @@ function levelComplete(){
   if(state.score>highScore) highScore=state.score;
   gameWrap.classList.add('server-saved');
   setTimeout(()=>gameWrap.classList.remove('server-saved'),1800);
+  const crisis=CRISIS_AVOIDED[Math.floor(Math.random()*CRISIS_AVOIDED.length)];
+  document.getElementById('level-title').textContent=crisis;
   document.getElementById('level-msg').innerHTML=`Server ${state.level} is back online!<br>Time bonus: +${timeBonus}`;
   document.getElementById('level-score').textContent='SCORE: '+state.score;
   document.getElementById('level-screen').classList.remove('hidden');
