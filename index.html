@@ -165,15 +165,30 @@
     font-size: 0.3rem; color: #334466; text-align: center;
     font-family: 'Press Start 2P', monospace; letter-spacing: 1px;
   }
-  /* Graffiti tag */
+  /* Graffiti tag — 80's bubble pixel art */
   .graffiti {
-    font-family: 'Courier New', monospace;
-    font-size: 0.5rem; color: #2a2a4a; letter-spacing: 2px;
-    transform: rotate(-4deg) skewX(-6deg);
-    text-shadow: 1px 1px 0 #1a1a30, -1px 0 0 #222244;
-    opacity: 0.5; white-space: nowrap;
-    font-style: italic; font-weight: bold;
-    align-self: flex-end; margin-top: 20px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.6rem; color: #ff44cc; letter-spacing: 4px;
+    transform: rotate(-2deg);
+    text-shadow:
+      3px 3px 0 #aa0066,
+      6px 6px 0 #660044,
+      -1px -1px 0 #ff88ee,
+      0 0 10px #ff44cc88,
+      0 0 30px #ff00aa44,
+      0 0 50px #cc006622;
+    white-space: nowrap;
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+    padding: 10px 0 6px 0;
+    background: linear-gradient(to right, transparent, #ff44cc08, #44eeff08, transparent);
+    -webkit-text-stroke: 1px #aa0066;
+    animation: graffitiGlow 2s ease-in-out infinite alternate;
+  }
+  @keyframes graffitiGlow {
+    from { text-shadow: 3px 3px 0 #aa0066, 6px 6px 0 #660044, -1px -1px 0 #ff88ee, 0 0 10px #ff44cc88, 0 0 30px #ff00aa44; }
+    to { text-shadow: 3px 3px 0 #aa0066, 6px 6px 0 #660044, -1px -1px 0 #ff88ee, 0 0 20px #44eeffaa, 0 0 40px #00ccff66, 0 0 60px #ff44cc44; }
   }
   /* Hide d-pad on desktop, show on touch */
   #dpad-area { display: none; }
@@ -278,6 +293,8 @@
   <div id="ticket-name"></div>
   <div id="ticket-dept"></div>
   <div id="ticket-msg"></div>
+  <div id="ticket-tap" style="font-family:'Press Start 2P',monospace;font-size:0.3rem;color:#556677;margin-top:8px;animation:nextPulse 0.8s ease-in-out infinite alternate;">[TAP TO DISMISS]</div>
+  <div id="ticket-reply" style="font-family:'Press Start 2P',monospace;font-size:0.5rem;color:#44ee88;text-align:center;margin-top:10px;display:none;text-shadow:0 0 8px #44ee8866;line-height:2;"></div>
 </div>
 
 <!-- GAME -->
@@ -312,7 +329,6 @@
       <div class="dpad-btn" data-dir="right" id="btn-right">►</div>
     </div>
   </div>
-  <div class="graffiti">Nico was ere</div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
     <div class="dpad-label">MOVE</div>
     <div class="dpad-group vertical">
@@ -321,6 +337,7 @@
     </div>
   </div>
 </div>
+<div class="graffiti">Nico was ere</div>
 
 <script>
 // ═══════════════════════════════════════
@@ -438,11 +455,11 @@ function checkPromotion(){const p=getCurrentPromotion();const i=PROMOTIONS.index
 //  TICKET INTERRUPT PEOPLE
 // ═══════════════════════════════════════
 const TICKET_PEOPLE = [
-  { name: 'Karen', dept: 'Marketing', msgs: ['"I need this YESTERDAY!"','"My email font looks wrong!"','"Can you make it pop more?"'] },
-  { name: 'Chad', dept: 'Sales', msgs: ['"My CRM crashed mid-deal!"','"I deleted my pipeline again!"','"LinkedIn won\'t load!"'] },
-  { name: 'Greg', dept: 'Legal', msgs: ['"We need an audit trail NOW."','"This violates compliance!"','"Print everything. EVERYTHING."'] },
-  { name: 'Susan', dept: 'Management', msgs: ['"The board needs this by EOD."','"Can we get a status update?"','"Let\'s circle back on this."'] },
-  { name: 'Kevin', dept: 'Engineering', msgs: ['"I pushed to prod and it broke."','"The build is on fire."','"Who deleted the database?"'] },
+  { name: 'Karen', dept: 'Marketing', msgs: ['"How does email work again?"','"I lost my computer. Like, the whole thing."','"The internet deleted itself."','"My mouse is upside down."','"Can you make the logo bigger in the database?"'] },
+  { name: 'Chad', dept: 'Sales', msgs: ['"I spilled coffee on the server. Which button is undo?"','"My spreadsheet is haunted, rows keep appearing."','"I saved a file but now my desk drawer won\'t open?"','"I typed Google into Google and it broke."','"Can you install Tinder on my work laptop?"'] },
+  { name: 'Greg', dept: 'Legal', msgs: ['"I need you to print the entire internet."','"Someone hacked my password. It was password123."','"My screen is too bright, I think it has a virus."','"I unplugged something and now the lights are off."','"The PDF is angry at me."'] },
+  { name: 'Susan', dept: 'Management', msgs: ['"Where is the ANY key?"','"I deleted the recycle bin, can you recycle it back?"','"My laptop won\'t turn on. No I haven\'t plugged it in, why?"','"The WiFi tastes funny today."','"Can you make Excel more exciting?"'] },
+  { name: 'Kevin', dept: 'Engineering', msgs: ['"I pushed to prod and now the building is on fire."','"The database is upside down."','"I accidentally mass-emailed my cat photos to all clients."','"Who put a firewall in front of my fire?"','"I rm -rf\'d something important. What was the company called again?"'] },
 ];
 const TICKET_ICONS = ['📋','📝','🚨','📌','⚠️'];
 
@@ -758,6 +775,12 @@ function showTimeBonus(gx,gy,text){
 // ═══════════════════════════════════════
 //  TICKET INTERRUPTS
 // ═══════════════════════════════════════
+const DAVE_REPLIES = [
+  '"Have you turned it off and on again?"',
+  '"Have you submitted a ticket?"'
+];
+let ticketDismissHandler=null;
+
 function triggerTicket(){
   if(!state.running) return;
   state.running=false; // pause
@@ -769,16 +792,37 @@ function triggerTicket(){
   document.getElementById('ticket-name').textContent=person.name;
   document.getElementById('ticket-dept').textContent=`from ${person.dept}`;
   document.getElementById('ticket-msg').textContent=msg;
+  document.getElementById('ticket-tap').style.display='block';
+  document.getElementById('ticket-reply').style.display='none';
   const overlay=document.getElementById('ticket-overlay');
   overlay.classList.add('active');
 
-  setTimeout(()=>{
-    overlay.classList.remove('active');
-    // Add 1-2 extra items or reshuffle
-    addTicketItems();
-    state.running=true;
-    render(); renderOrder(); updateHUD();
-  }, 2200);
+  // Remove old handler if any
+  if(ticketDismissHandler) overlay.removeEventListener('click',ticketDismissHandler);
+  if(ticketDismissHandler) overlay.removeEventListener('touchstart',ticketDismissHandler);
+
+  ticketDismissHandler=function(e){
+    e.preventDefault();
+    overlay.removeEventListener('click',ticketDismissHandler);
+    overlay.removeEventListener('touchstart',ticketDismissHandler);
+    // Show Dave's reply
+    const reply=DAVE_REPLIES[Math.floor(Math.random()*DAVE_REPLIES.length)];
+    const replyEl=document.getElementById('ticket-reply');
+    replyEl.textContent='Dave: '+reply;
+    replyEl.style.display='block';
+    document.getElementById('ticket-tap').style.display='none';
+    sfxLightOn();
+    // Auto close after showing reply
+    setTimeout(()=>{
+      overlay.classList.remove('active');
+      addTicketItems();
+      state.running=true;
+      render(); renderOrder(); updateHUD();
+    }, 1400);
+  };
+
+  overlay.addEventListener('click',ticketDismissHandler);
+  overlay.addEventListener('touchstart',ticketDismissHandler,{passive:false});
 }
 
 function addTicketItems(){
