@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>CRASH</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+  body {
+    background: #0a0a1a;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: 'Press Start 2P', monospace;
+    overflow: hidden;
+    touch-action: none;
+    padding-top: env(safe-area-inset-top, 8px);
+  }
+  #game-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    max-width: 420px;
+    width: 95vw;
+    position: relative;
+    padding-top: 4px;
+  }
+  #title { font-size: 1.8rem; color: #e8451c; text-shadow: 3px 3px 0 #7a1a00, 0 0 20px #ff4500aa; letter-spacing: 6px; animation: titlePulse 1.5s ease-in-out infinite alternate; }
+  @keyframes titlePulse { from { text-shadow: 3px 3px 0 #7a1a00, 0 0 10px #ff4500aa; } to { text-shadow: 3px 3px 0 #7a1a00, 0 0 30px #ff6a33cc; } }
+  #subtitle { font-size: 0.38rem; color: #7799aa; letter-spacing: 1px; }
+  #dave-title { font-size: 0.35rem; color: #ffaa00; letter-spacing: 1px; min-height: 10px; }
+  #timer-bar-outer { width: 100%; height: 14px; background: #1a1a2e; border: 2px solid #333355; border-radius: 2px; overflow: hidden; }
+  #timer-bar { height: 100%; background: #22cc44; transition: width 0.1s linear, background 0.3s; width: 100%; }
+  #timer-bar.danger { background: #ee2222; animation: barFlash 0.4s ease-in-out infinite alternate; }
+  @keyframes barFlash { from { opacity: 1; } to { opacity: 0.4; } }
+  #timer-text { font-size: 0.45rem; color: #99aabb; align-self: flex-end; margin-top: -2px; }
+  /* NPC timer bar */
+  #npc-timer-wrap { width: 100%; display: none; }
+  #npc-timer-wrap.active { display: block; }
+  #npc-timer-label { font-size: 0.35rem; color: #ff77aa; margin-bottom: 2px; }
+  #npc-timer-outer { width: 100%; height: 10px; background: #1a1a2e; border: 2px solid #553355; border-radius: 2px; overflow: hidden; }
+  #npc-timer-bar { height: 100%; background: #ff77aa; transition: width 0.1s linear; width: 100%; }
+  #npc-timer-bar.danger { background: #ff2255; animation: barFlash 0.3s ease-in-out infinite alternate; }
+  #game-board {
+    display: grid; gap: 2px; padding: 4px;
+    background: #111128; border: 2px solid #222244; border-radius: 4px;
+    width: 100%; aspect-ratio: 1;
+  }
+  .cell {
+    background: #1e2040; border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; transition: background 0.15s; aspect-ratio: 1; overflow: hidden;
+  }
+  .cell.alt { background: #232548; }
+  .cell.blackout { background: #000000 !important; box-shadow: inset 0 0 10px #000; }
+  .cell.blackout .cell-content { visibility: hidden; }
+  .cell.player-here { background: #1a3355 !important; }
+  .cell.wrong-flash { animation: wrongShake 0.3s; background: #661111 !important; }
+  .cell.desk-cell { background: #2a2520 !important; border: 1px solid #554433; }
+  .cell.npc-cell { background: #2a1a2a !important; }
+  @keyframes wrongShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  .cell-content {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%; font-size: clamp(0.7rem, 3.5vw, 1.4rem);
+  }
+  .player { width: 70%; height: 80%; position: relative; }
+  .player-body { width: 100%; height: 65%; background: #33aaee; border-radius: 3px 3px 1px 1px; position: absolute; bottom: 0; border: 2px solid #2288bb; }
+  .player-head { width: 70%; height: 50%; background: #33aaee; border-radius: 3px; position: absolute; top: 0; left: 15%; border: 2px solid #2288bb; }
+  .player-eyes { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; }
+  .player-eye { width: 3px; height: 4px; background: white; border-radius: 1px; }
+  .player-hat { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 80%; height: 5px; border-radius: 2px 2px 0 0; display: none; }
+  /* Carrying indicator */
+  .carrying-indicator { position: absolute; top: -2px; right: -2px; font-size: 0.5rem; animation: carryBob 0.6s ease-in-out infinite alternate; }
+  @keyframes carryBob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+  #order-bar {
+    display: flex; gap: 4px; padding: 6px 8px;
+    background: #111128; border: 2px solid #222244; border-radius: 4px;
+    width: 100%; justify-content: center; flex-wrap: wrap; min-height: 44px; align-items: center;
+  }
+  .order-item {
+    width: 34px; height: 34px; background: #1e2040; border: 2px solid #333355; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    position: relative; transition: all 0.2s;
+  }
+  .order-item.collected { border-color: #22cc44; background: #112211; opacity: 0.5; }
+  .order-item.next { border-color: #ffaa00; box-shadow: 0 0 8px #ffaa0066; animation: nextPulse 0.8s ease-in-out infinite alternate; }
+  @keyframes nextPulse { from { box-shadow: 0 0 5px #ffaa0044; } to { box-shadow: 0 0 14px #ffaa0088; } }
+  .order-num { position: absolute; top: -5px; right: -5px; background: #e8451c; color: white; font-size: 0.35rem; width: 12px; height: 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  #info-row { display: flex; justify-content: space-between; width: 100%; font-size: 0.4rem; color: #7799aa; }
+  #score-display, #level-display, #highscore-display { padding: 3px 6px; background: #111128; border: 1px solid #222244; border-radius: 3px; }
+  #highscore-display { color: #ffaa00; }
+
+  /* ═══ VIRTUAL JOYSTICK ═══ */
+  #joystick-area {
+    width: 100%; height: 120px; display: flex; justify-content: center; align-items: center;
+    position: relative; margin-top: 4px;
+  }
+  #joystick-base {
+    width: 110px; height: 110px; border-radius: 50%;
+    background: radial-gradient(circle, #1a1a3a 0%, #0d0d20 100%);
+    border: 3px solid #333366; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 10px rgba(50,50,100,0.3);
+  }
+  #joystick-stick {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #4455aa, #222255);
+    border: 2px solid #5566cc;
+    position: absolute; transition: transform 0.08s ease-out;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+  #joystick-stick.active { border-color: #7788ee; background: radial-gradient(circle at 35% 35%, #5566cc, #333377); }
+  /* D-pad indicators */
+  .dpad-arrow { position: absolute; color: #334; font-size: 0.7rem; opacity: 0.4; }
+  .dpad-arrow.up { top: 6px; left: 50%; transform: translateX(-50%); }
+  .dpad-arrow.down { bottom: 6px; left: 50%; transform: translateX(-50%); }
+  .dpad-arrow.left { left: 8px; top: 50%; transform: translateY(-50%); }
+  .dpad-arrow.right { right: 8px; top: 50%; transform: translateY(-50%); }
+  .dpad-arrow.lit { color: #7788ee; opacity: 1; }
+  /* Hide joystick on desktop, show on touch */
+  #joystick-area { display: none; }
+  @media (pointer: coarse) { #joystick-area { display: flex; } }
+  @media (hover: none) { #joystick-area { display: flex; } }
+
+  /* ═══ OVERLAYS ═══ */
+  .overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.88); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 100; gap: 12px;
+  }
+  .overlay.hidden { display: none; }
+  .overlay h2 { font-family: 'Press Start 2P', monospace; font-size: 1.2rem; color: #e8451c; text-shadow: 2px 2px 0 #7a1a00; text-align: center; line-height: 1.6; }
+  .overlay p { font-family: 'Press Start 2P', monospace; font-size: 0.42rem; color: #7799aa; text-align: center; line-height: 2; max-width: 320px; }
+  .overlay .score-final { font-size: 0.6rem; color: #ffaa00; }
+  .btn { font-family: 'Press Start 2P', monospace; font-size: 0.55rem; padding: 10px 20px; background: #e8451c; color: white; border: none; border-radius: 3px; cursor: pointer; margin-top: 6px; text-shadow: 1px 1px 0 #7a1a00; }
+  .btn:hover { background: #ff5a2e; }
+  .btn:active { transform: scale(0.95); }
+
+  /* Ticket interrupt overlay */
+  #ticket-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.75); display: none; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 90; gap: 10px;
+    animation: ticketSlam 0.3s;
+  }
+  #ticket-overlay.active { display: flex; }
+  @keyframes ticketSlam { 0% { transform: scale(1.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  #ticket-name { font-family: 'Press Start 2P', monospace; font-size: 0.7rem; color: #ff6688; text-shadow: 0 0 10px #ff668866; }
+  #ticket-dept { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; color: #aabbcc; margin-top: -4px; }
+  #ticket-msg { font-family: 'Press Start 2P', monospace; font-size: 0.45rem; color: #ffaa44; text-align: center; line-height: 2; max-width: 300px; }
+  #ticket-icon { font-size: 2.5rem; animation: ticketBounce 0.4s ease-in-out 3 alternate; }
+  @keyframes ticketBounce { from { transform: translateY(0) rotate(-5deg); } to { transform: translateY(-10px) rotate(5deg); } }
+
+  .shake { animation: screenShake 0.3s; }
+  @keyframes screenShake { 0%,100% { transform: translate(0); } 10% { transform: translate(-3px, 2px); } 30% { transform: translate(3px, -2px); } 50% { transform: translate(-2px, 3px); } 70% { transform: translate(2px, -3px); } 90% { transform: translate(-1px, 1px); } }
+  .server-saved { animation: savedFlash 0.6s ease-out 3; }
+  @keyframes savedFlash { 0% { box-shadow: 0 0 0 #22cc44; } 50% { box-shadow: 0 0 40px #22cc4466; } 100% { box-shadow: 0 0 0 #22cc44; } }
+  .penalty-popup { position: fixed; font-family: 'Press Start 2P', monospace; font-size: 0.6rem; color: #ee2222; pointer-events: none; z-index: 50; animation: penaltyFade 1s forwards; }
+  @keyframes penaltyFade { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-40px); } }
+  #promo-screen h2 { color: #ffaa00; text-shadow: 2px 2px 0 #886600; }
+  .promo-title { font-size: 0.8rem !important; color: #ffdd44 !important; text-shadow: 0 0 10px #ffaa0066; }
+  .promo-desc { font-size: 0.38rem !important; color: #aabbcc !important; font-style: italic; }
+  .new-highscore { font-size: 0.55rem; color: #ffdd44; animation: hsFlash 0.5s ease-in-out infinite alternate; }
+  @keyframes hsFlash { from { text-shadow: 0 0 5px #ffdd4444; } to { text-shadow: 0 0 15px #ffdd44aa; } }
+  #sound-toggle { position: fixed; top: 8px; right: 8px; font-size: 1rem; background: #111128; border: 2px solid #333355; border-radius: 4px; padding: 4px 6px; cursor: pointer; z-index: 200; color: white; }
+  /* NPC waiting indicator */
+  .npc-waiting { animation: npcPulse 0.8s ease-in-out infinite alternate; }
+  @keyframes npcPulse { from { opacity: 0.7; } to { opacity: 1; } }
+  /* Side quest status bar */
+  #sidequest-bar { width: 100%; display: none; padding: 4px 8px; background: #1a1128; border: 1px solid #442255; border-radius: 3px; font-size: 0.3rem; color: #cc88ee; text-align: center; line-height: 1.6; }
+  #sidequest-bar.active { display: block; }
+</style>
+</head>
+<body>
+
+<button id="sound-toggle" title="Toggle Sound">🔊</button>
+
+<!-- START SCREEN -->
+<div class="overlay" id="start-screen">
+  <h2>CRASH</h2>
+  <p>Dave from IT is in crisis!<br><br>
+  The servers are melting down!<br><br>
+  Collect repair items in the<br>correct order to fix each server!<br><br>
+  Watch out for blackouts,<br>ticket interruptions, and<br>needy coworkers!</p>
+  <p style="color:#ffaa00; margin-top:6px;">ARROW KEYS or JOYSTICK</p>
+  <button class="btn" id="start-btn">START</button>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay hidden" id="gameover-screen">
+  <h2>SERVER CRASHED!</h2>
+  <p>Dave couldn't save the servers...</p>
+  <p class="score-final" id="final-score"></p>
+  <p class="score-final" id="final-level"></p>
+  <p class="new-highscore hidden" id="new-hs">★ NEW HIGH SCORE ★</p>
+  <button class="btn" id="restart-btn">TRY AGAIN</button>
+</div>
+
+<!-- LEVEL COMPLETE -->
+<div class="overlay hidden" id="level-screen">
+  <h2 style="color:#22cc44">SERVER SAVED!</h2>
+  <p id="level-msg"></p>
+  <p class="score-final" id="level-score"></p>
+  <button class="btn" id="next-btn" style="background:#22aa44">NEXT SERVER</button>
+</div>
+
+<!-- PROMOTION -->
+<div class="overlay hidden" id="promo-screen">
+  <h2>⬆ PROMOTION! ⬆</h2>
+  <p style="color:#ffaa00;">Dave got promoted!</p>
+  <p class="promo-title" id="promo-new-title"></p>
+  <p class="promo-desc" id="promo-desc"></p>
+  <button class="btn" id="promo-btn" style="background:#cc8800;">NICE!</button>
+</div>
+
+<!-- TICKET INTERRUPT -->
+<div id="ticket-overlay">
+  <div id="ticket-icon">📋</div>
+  <div id="ticket-name"></div>
+  <div id="ticket-dept"></div>
+  <div id="ticket-msg"></div>
+</div>
+
+<!-- GAME -->
+<div id="game-wrap">
+  <div id="title">CRASH</div>
+  <div id="subtitle">DAVE FROM IT vs THE MELTDOWN</div>
+  <div id="dave-title"></div>
+  <div id="info-row">
+    <div id="level-display">LVL 1</div>
+    <div id="highscore-display">HI 0</div>
+    <div id="score-display">0</div>
+  </div>
+  <div id="timer-bar-outer"><div id="timer-bar"></div></div>
+  <div id="npc-timer-wrap">
+    <div id="npc-timer-label"></div>
+    <div id="npc-timer-outer"><div id="npc-timer-bar"></div></div>
+  </div>
+  <div id="timer-text"></div>
+  <div id="sidequest-bar"></div>
+  <div id="game-board"></div>
+  <div id="order-bar"></div>
+
+  <!-- VIRTUAL JOYSTICK -->
+  <div id="joystick-area">
+    <div id="joystick-base">
+      <div class="dpad-arrow up">▲</div>
+      <div class="dpad-arrow down">▼</div>
+      <div class="dpad-arrow left">◄</div>
+      <div class="dpad-arrow right">►</div>
+      <div id="joystick-stick"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  SOUND ENGINE
+// ═══════════════════════════════════════
+let audioCtx = null, soundEnabled = true, tickInterval = null;
+function initAudio() { if (audioCtx) return; audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+function playTone(freq, dur, type='square', vol=0.12) {
+  if (!audioCtx || !soundEnabled) return;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq; g.gain.value = vol;
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur);
+}
+function sfxMove() { playTone(220, 0.06, 'square', 0.07); }
+function sfxCollect() { playTone(523,0.08,'square',0.13); setTimeout(()=>playTone(659,0.08,'square',0.13),60); setTimeout(()=>playTone(784,0.12,'square',0.15),120); setTimeout(()=>playTone(1047,0.18,'square',0.12),190); }
+function sfxWrongDonk() {
+  if (!audioCtx || !soundEnabled) return;
+  const t = audioCtx.currentTime;
+  const o1=audioCtx.createOscillator(),g1=audioCtx.createGain();
+  o1.type='sine'; o1.frequency.setValueAtTime(150,t); o1.frequency.exponentialRampToValueAtTime(80,t+0.15);
+  g1.gain.setValueAtTime(0.35,t); g1.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+  o1.connect(g1); g1.connect(audioCtx.destination); o1.start(t); o1.stop(t+0.2);
+  const o2=audioCtx.createOscillator(),g2=audioCtx.createGain();
+  o2.type='triangle'; o2.frequency.setValueAtTime(280,t+0.02); o2.frequency.exponentialRampToValueAtTime(120,t+0.18);
+  g2.gain.setValueAtTime(0.3,t+0.02); g2.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+  o2.connect(g2); g2.connect(audioCtx.destination); o2.start(t+0.02); o2.stop(t+0.22);
+  const bs=audioCtx.sampleRate*0.08, buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<bs;i++) d[i]=(Math.random()*2-1)*0.15;
+  const n=audioCtx.createBufferSource(),ng=audioCtx.createGain(); n.buffer=buf;
+  ng.gain.setValueAtTime(0.15,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+  n.connect(ng); ng.connect(audioCtx.destination); n.start(t); n.stop(t+0.08);
+}
+function sfxBlackout() { playTone(60,0.3,'sine',0.1); playTone(55,0.3,'triangle',0.06); }
+function sfxLightOn() { playTone(880,0.05,'square',0.08); setTimeout(()=>playTone(1100,0.08,'square',0.06),40); }
+function sfxLevelComplete() { [523,659,784,1047,784,1047,1319].forEach((n,i)=>setTimeout(()=>playTone(n,0.15,'square',0.12),i*100)); }
+function sfxPromotion() { [392,523,659,784,0,784,1047,1319,1568].forEach((n,i)=>{if(n>0)setTimeout(()=>playTone(n,0.18,'square',0.13),i*120)}); }
+function sfxGameOver() { [523,466,392,330,262,196,131].forEach((n,i)=>setTimeout(()=>{playTone(n,0.25,'square',0.1);playTone(n*0.5,0.25,'triangle',0.06)},i*150)); }
+function sfxTicket() { playTone(440,0.1,'square',0.15); setTimeout(()=>playTone(550,0.1,'square',0.15),100); setTimeout(()=>playTone(440,0.15,'square',0.15),200); }
+function sfxNpcArrive() { playTone(330,0.1,'triangle',0.1); setTimeout(()=>playTone(440,0.12,'triangle',0.1),120); }
+function sfxNpcComplete() { [440,554,659,880].forEach((n,i)=>setTimeout(()=>playTone(n,0.12,'square',0.1),i*80)); }
+function sfxNpcFail() { playTone(200,0.3,'sawtooth',0.08); }
+
+// Background music
+const BASS_PATTERNS=[[65,0,82,0,98,0,82,0],[73,0,98,0,110,0,98,0],[87,0,110,0,131,0,110,0],[82,0,98,0,110,0,131,0]];
+const MELODY_NOTES=[262,294,330,349,392,440,494,523,587,659];
+let musicStep=0, musicInterval=null, currentBassPattern=0;
+function startMusic() {
+  if(musicInterval) clearInterval(musicInterval); musicStep=0; currentBassPattern=0;
+  musicInterval=setInterval(()=>{
+    if(!soundEnabled||!audioCtx||!state.running) return;
+    const p=BASS_PATTERNS[currentBassPattern%BASS_PATTERNS.length], bn=p[musicStep%p.length];
+    if(bn>0) playTone(bn,0.1,'triangle',0.035);
+    if(musicStep%2===0&&Math.random()>0.4) playTone(MELODY_NOTES[Math.floor(Math.random()*MELODY_NOTES.length)],0.08,'square',0.02);
+    if(audioCtx&&soundEnabled){const bs=audioCtx.sampleRate*0.015,buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate),dd=buf.getChannelData(0);for(let i=0;i<bs;i++)dd[i]=(Math.random()*2-1);const s=audioCtx.createBufferSource(),g=audioCtx.createGain();s.buffer=buf;g.gain.value=0.012;s.connect(g);g.connect(audioCtx.destination);s.start();s.stop(audioCtx.currentTime+0.015);}
+    musicStep++; if(musicStep%16===0) currentBassPattern++;
+  }, (60000/140)/2);
+}
+function stopMusic() { if(musicInterval){clearInterval(musicInterval);musicInterval=null;} }
+function startCountdownTick() {
+  if(tickInterval) clearInterval(tickInterval);
+  tickInterval=setInterval(()=>{
+    if(!state.running||!soundEnabled||!audioCtx) return;
+    const pct=state.timeLeft/(state.maxTime*10);
+    if(pct<0.6) playTone(800+(1-pct)*600,0.03,'square',Math.min(0.02+(1-pct)*0.04,0.06));
+  },250);
+}
+function stopCountdownTick() { if(tickInterval){clearInterval(tickInterval);tickInterval=null;} }
+
+// ═══════════════════════════════════════
+//  PROMOTIONS
+// ═══════════════════════════════════════
+const PROMOTIONS=[
+  {title:'Intern',desc:'"Where\'s the any key?"',color:'#888888',level:0},
+  {title:'Help Desk Grunt',desc:'"Have you tried turning it off and on again?"',color:'#44aa44',level:3},
+  {title:'Cable Monkey',desc:'"I see the problem — Layer 8 issue."',color:'#44aacc',level:6},
+  {title:'Server Whisperer',desc:'"The server spoke to me... it said SEGFAULT."',color:'#6666dd',level:9},
+  {title:'Firewall Wizard',desc:'"You shall not pass — port 443."',color:'#aa44cc',level:12},
+  {title:'Cloud Overlord',desc:'"It\'s not a bug, it\'s undocumented."',color:'#cc8800',level:15},
+  {title:'CTO of Chaos',desc:'"I don\'t fix problems, I make them strategic."',color:'#ee4444',level:18},
+  {title:'Digital God',desc:'"sudo rm -rf /fear"',color:'#ffdd44',level:21},
+];
+function getCurrentPromotion(){let p=PROMOTIONS[0];for(const x of PROMOTIONS)if(state.level>=x.level)p=x;return p;}
+function checkPromotion(){const p=getCurrentPromotion();const i=PROMOTIONS.indexOf(p);return(i>0&&state.level===p.level)?p:null;}
+
+// ═══════════════════════════════════════
+//  TICKET INTERRUPT PEOPLE
+// ═══════════════════════════════════════
+const TICKET_PEOPLE = [
+  { name: 'Karen', dept: 'Marketing', msgs: ['"I need this YESTERDAY!"','"My email font looks wrong!"','"Can you make it pop more?"'] },
+  { name: 'Chad', dept: 'Sales', msgs: ['"My CRM crashed mid-deal!"','"I deleted my pipeline again!"','"LinkedIn won\'t load!"'] },
+  { name: 'Greg', dept: 'Legal', msgs: ['"We need an audit trail NOW."','"This violates compliance!"','"Print everything. EVERYTHING."'] },
+  { name: 'Susan', dept: 'Management', msgs: ['"The board needs this by EOD."','"Can we get a status update?"','"Let\'s circle back on this."'] },
+  { name: 'Kevin', dept: 'Engineering', msgs: ['"I pushed to prod and it broke."','"The build is on fire."','"Who deleted the database?"'] },
+];
+const TICKET_ICONS = ['📋','📝','🚨','📌','⚠️'];
+
+// ═══════════════════════════════════════
+//  SIDE QUEST NPC SYSTEM
+// ═══════════════════════════════════════
+const NPC_REQUESTS = [
+  { emoji:'🪑', name:'Broken Chair', person:'Janet from HR', personEmoji:'👩‍💼' },
+  { emoji:'🖨️', name:'Printer Jam', person:'Bob from Accounting', personEmoji:'👨‍💼' },
+  { emoji:'💻', name:'New Laptop', person:'Tina the Temp', personEmoji:'👩' },
+  { emoji:'🔐', name:'Password Reset', person:'Frank from Facilities', personEmoji:'👷' },
+  { emoji:'📱', name:'Phone Setup', person:'New Hire Alex', personEmoji:'🧑' },
+  { emoji:'🖥️', name:'Software Access', person:'Diane from Design', personEmoji:'👩‍🎨' },
+  { emoji:'🪪', name:'Badge Doesn\'t Work', person:'Security Mike', personEmoji:'👮' },
+  { emoji:'📧', name:'Email Won\'t Send', person:'Patty from PR', personEmoji:'💁‍♀️' },
+];
+
+// ═══════════════════════════════════════
+//  GAME ITEMS & STATE
+// ═══════════════════════════════════════
+const ITEMS=[
+  {emoji:'🔧',name:'Wrench'},{emoji:'🧲',name:'Magnet'},{emoji:'🔑',name:'Key'},{emoji:'🔒',name:'Lock'},
+  {emoji:'💾',name:'Disk'},{emoji:'🔌',name:'Plug'},{emoji:'🪛',name:'Screwdriver'},{emoji:'📡',name:'Antenna'},
+  {emoji:'🔋',name:'Battery'},{emoji:'💿',name:'CD'},
+];
+
+let highScore = 0;
+let state = {
+  gridSize:5, level:1, score:0,
+  player:{x:2,y:2}, items:[], order:[], nextCollect:0,
+  blackouts:new Set(), timeLeft:0, maxTime:0, running:false,
+  timerInterval:null, blackoutInterval:null, ticketInterval:null,
+  // Side quest
+  npc: null, // { x, y, request, deskX, deskY, itemX, itemY, timer, maxTimer, phase:'waiting'|'gotItem'|'delivered' }
+  npcTimerInterval: null,
+  carrying: null, // emoji of item being carried
+};
+
+// DOM
+const board=document.getElementById('game-board'), orderBar=document.getElementById('order-bar');
+const timerBar=document.getElementById('timer-bar'), timerText=document.getElementById('timer-text');
+const scoreDisplay=document.getElementById('score-display'), levelDisplay=document.getElementById('level-display');
+const highscoreDisplay=document.getElementById('highscore-display'), gameWrap=document.getElementById('game-wrap');
+const npcTimerWrap=document.getElementById('npc-timer-wrap'), npcTimerBar=document.getElementById('npc-timer-bar');
+const npcTimerLabel=document.getElementById('npc-timer-label'), sidequestBar=document.getElementById('sidequest-bar');
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function cellKey(x,y){return `${x},${y}`;}
+function getEmptyCells(){
+  const used=new Set();
+  used.add(cellKey(state.player.x,state.player.y));
+  state.items.forEach(it=>{if(!it.collected)used.add(cellKey(it.x,it.y));});
+  if(state.npc){
+    used.add(cellKey(state.npc.x,state.npc.y));
+    used.add(cellKey(state.npc.deskX,state.npc.deskY));
+    if(state.npc.phase==='waiting') used.add(cellKey(state.npc.itemX,state.npc.itemY));
+  }
+  const empty=[];
+  for(let y=0;y<state.gridSize;y++)for(let x=0;x<state.gridSize;x++)if(!used.has(cellKey(x,y)))empty.push({x,y});
+  return shuffle(empty);
+}
+
+// ═══════════════════════════════════════
+//  INIT LEVEL
+// ═══════════════════════════════════════
+function initLevel(){
+  const gs=Math.min(5+Math.floor((state.level-1)/2),8);
+  state.gridSize=gs;
+  const numItems=Math.min(3+state.level,ITEMS.length);
+  const baseTime=25+state.level*5;
+  state.maxTime=baseTime; state.timeLeft=baseTime*10;
+  state.nextCollect=0; state.blackouts=new Set();
+  state.npc=null; state.carrying=null;
+  clearNpcTimer();
+  npcTimerWrap.classList.remove('active');
+  sidequestBar.classList.remove('active');
+
+  state.player={x:Math.floor(gs/2),y:Math.floor(gs/2)};
+  const picked=shuffle([...Array(ITEMS.length).keys()]).slice(0,numItems);
+  state.items=[];
+  const used=new Set(); used.add(cellKey(state.player.x,state.player.y));
+  picked.forEach(idx=>{
+    let pos; do{pos={x:Math.floor(Math.random()*gs),y:Math.floor(Math.random()*gs)};}while(used.has(cellKey(pos.x,pos.y)));
+    used.add(cellKey(pos.x,pos.y));
+    state.items.push({x:pos.x,y:pos.y,itemIdx:idx,collected:false});
+  });
+  state.order=shuffle([...Array(numItems).keys()]);
+  board.style.gridTemplateColumns=`repeat(${gs},1fr)`;
+  updateDaveTitle(); render(); renderOrder(); updateHUD();
+}
+
+function updateDaveTitle(){
+  const p=getCurrentPromotion(),el=document.getElementById('dave-title');
+  el.textContent=`Dave the ${p.title}`; el.style.color=p.color;
+}
+
+// ═══════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════
+function render(){
+  board.innerHTML='';
+  const promo=getCurrentPromotion(), promoIdx=PROMOTIONS.indexOf(promo);
+  for(let y=0;y<state.gridSize;y++){
+    for(let x=0;x<state.gridSize;x++){
+      const cell=document.createElement('div');
+      cell.className='cell';
+      if((x+y)%2===1) cell.classList.add('alt');
+      const key=cellKey(x,y);
+      if(state.blackouts.has(key)) cell.classList.add('blackout');
+
+      // Desk
+      if(state.npc && state.npc.deskX===x && state.npc.deskY===y) cell.classList.add('desk-cell');
+      // NPC
+      if(state.npc && state.npc.x===x && state.npc.y===y) cell.classList.add('npc-cell');
+
+      const content=document.createElement('div');
+      content.className='cell-content';
+
+      // Player
+      if(state.player.x===x && state.player.y===y){
+        cell.classList.add('player-here');
+        const hatStyle=promoIdx>0?`display:block;background:${promo.color};`:'display:none;';
+        const carryHtml=state.carrying?`<div class="carrying-indicator">${state.carrying}</div>`:'';
+        content.innerHTML=`<div class="player" style="position:relative">
+          <div class="player-hat" style="${hatStyle}"></div>
+          <div class="player-head"><div class="player-eyes"><div class="player-eye"></div><div class="player-eye"></div></div></div>
+          <div class="player-body"></div>${carryHtml}</div>`;
+      }
+      // NPC person
+      else if(state.npc && state.npc.x===x && state.npc.y===y){
+        content.innerHTML=`<span class="npc-waiting">${state.npc.request.personEmoji}</span>`;
+      }
+      // Desk
+      else if(state.npc && state.npc.deskX===x && state.npc.deskY===y){
+        content.textContent='🗄️';
+      }
+      // NPC item (only if phase=waiting and not collected)
+      else if(state.npc && state.npc.phase==='waiting' && state.npc.itemX===x && state.npc.itemY===y){
+        content.textContent=state.npc.request.emoji;
+      }
+      // Regular item
+      else {
+        const item=state.items.find(it=>it.x===x&&it.y===y&&!it.collected);
+        if(item) content.textContent=ITEMS[item.itemIdx].emoji;
+      }
+
+      cell.appendChild(content);
+      board.appendChild(cell);
+    }
+  }
+}
+
+function renderOrder(){
+  orderBar.innerHTML='';
+  state.order.forEach((idx,seq)=>{
+    const it=state.items[idx], div=document.createElement('div');
+    div.className='order-item';
+    if(it.collected) div.classList.add('collected');
+    if(seq===state.nextCollect&&!it.collected) div.classList.add('next');
+    div.textContent=ITEMS[it.itemIdx].emoji;
+    const num=document.createElement('div'); num.className='order-num'; num.textContent=seq+1;
+    div.appendChild(num); orderBar.appendChild(div);
+  });
+}
+
+function updateHUD(){
+  const secs=Math.ceil(state.timeLeft/10);
+  timerText.textContent=secs+'s';
+  const pct=(state.timeLeft/(state.maxTime*10))*100;
+  timerBar.style.width=pct+'%';
+  if(pct<25){timerBar.classList.add('danger');}else{timerBar.classList.remove('danger');timerBar.style.background=pct<50?'#ddaa00':'#22cc44';}
+  scoreDisplay.textContent=state.score;
+  levelDisplay.textContent='LVL '+state.level;
+  highscoreDisplay.textContent='HI '+highScore;
+  // NPC timer
+  if(state.npc){
+    const npct=(state.npc.timer/(state.npc.maxTimer))*100;
+    npcTimerBar.style.width=npct+'%';
+    if(npct<30) npcTimerBar.classList.add('danger'); else npcTimerBar.classList.remove('danger');
+  }
+}
+
+// ═══════════════════════════════════════
+//  PLAYER MOVEMENT
+// ═══════════════════════════════════════
+let moveThrottle = false;
+function movePlayer(dx,dy){
+  if(!state.running || moveThrottle) return;
+  const nx=state.player.x+dx, ny=state.player.y+dy;
+  if(nx<0||nx>=state.gridSize||ny<0||ny>=state.gridSize) return;
+  moveThrottle = true;
+  setTimeout(() => moveThrottle = false, 80);
+
+  state.player.x=nx; state.player.y=ny;
+  sfxMove();
+  const key=cellKey(nx,ny);
+
+  // Fix blackout
+  if(state.blackouts.has(key)){ state.blackouts.delete(key); state.score+=10; sfxLightOn(); }
+
+  // ── NPC interactions ──
+  if(state.npc){
+    // Pick up NPC's item
+    if(state.npc.phase==='waiting' && nx===state.npc.itemX && ny===state.npc.itemY){
+      state.carrying=state.npc.request.emoji;
+      state.npc.phase='gotItem';
+      sfxCollect();
+      updateSidequestBar();
+    }
+    // Deliver to desk
+    else if(state.npc.phase==='gotItem' && state.carrying && nx===state.npc.deskX && ny===state.npc.deskY){
+      state.npc.phase='delivered';
+      state.carrying=null;
+      sfxLightOn();
+      updateSidequestBar();
+    }
+    // Return to NPC after desk
+    else if(state.npc.phase==='delivered' && nx===state.npc.x && ny===state.npc.y){
+      // Side quest complete — TIME EXTENSION!
+      const timeReward = 80; // +8 seconds
+      state.timeLeft = Math.min(state.timeLeft + timeReward, state.maxTime * 10);
+      state.score += 100 + state.level * 15;
+      sfxNpcComplete();
+      showTimeBonus(nx, ny, '+8s');
+      clearNpcTimer();
+      state.npc=null;
+      npcTimerWrap.classList.remove('active');
+      sidequestBar.classList.remove('active');
+    }
+  }
+
+  // ── Regular item pickup ──
+  const itemHere=state.items.find(it=>it.x===nx&&it.y===ny&&!it.collected);
+  if(itemHere){
+    const expected=state.order[state.nextCollect];
+    if(state.items.indexOf(itemHere)===expected){
+      itemHere.collected=true; state.score+=50+state.level*10; state.nextCollect++;
+      sfxCollect();
+      const remaining=state.items.filter(it=>!it.collected), empties=getEmptyCells();
+      remaining.forEach((it,i)=>{if(empties[i]){it.x=empties[i].x;it.y=empties[i].y;}});
+      if(state.nextCollect>=state.order.length){levelComplete();return;}
+    } else {
+      state.timeLeft=Math.max(0,state.timeLeft-50);
+      sfxWrongDonk(); gameWrap.classList.add('shake'); showPenalty(nx,ny);
+      setTimeout(()=>gameWrap.classList.remove('shake'),300);
+    }
+  }
+  render(); renderOrder(); updateHUD();
+}
+
+function showPenalty(gx,gy){
+  const popup=document.createElement('div'); popup.className='penalty-popup'; popup.textContent='-5s';
+  const rect=board.getBoundingClientRect(), cs=rect.width/state.gridSize;
+  popup.style.left=(rect.left+gx*cs+cs/2-15)+'px'; popup.style.top=(rect.top+gy*cs)+'px';
+  document.body.appendChild(popup); setTimeout(()=>popup.remove(),1000);
+}
+function showTimeBonus(gx,gy,text){
+  const popup=document.createElement('div'); popup.className='penalty-popup';
+  popup.textContent=text; popup.style.color='#22ee44'; popup.style.fontSize='0.8rem';
+  const rect=board.getBoundingClientRect(), cs=rect.width/state.gridSize;
+  popup.style.left=(rect.left+gx*cs+cs/2-20)+'px'; popup.style.top=(rect.top+gy*cs)+'px';
+  document.body.appendChild(popup); setTimeout(()=>popup.remove(),1200);
+}
+
+// ═══════════════════════════════════════
+//  TICKET INTERRUPTS
+// ═══════════════════════════════════════
+function triggerTicket(){
+  if(!state.running) return;
+  state.running=false; // pause
+  const person=TICKET_PEOPLE[Math.floor(Math.random()*TICKET_PEOPLE.length)];
+  const msg=person.msgs[Math.floor(Math.random()*person.msgs.length)];
+  const icon=TICKET_ICONS[Math.floor(Math.random()*TICKET_ICONS.length)];
+  sfxTicket();
+  document.getElementById('ticket-icon').textContent=icon;
+  document.getElementById('ticket-name').textContent=person.name;
+  document.getElementById('ticket-dept').textContent=`from ${person.dept}`;
+  document.getElementById('ticket-msg').textContent=msg;
+  const overlay=document.getElementById('ticket-overlay');
+  overlay.classList.add('active');
+
+  setTimeout(()=>{
+    overlay.classList.remove('active');
+    // Add 1-2 extra items or reshuffle
+    addTicketItems();
+    state.running=true;
+    render(); renderOrder(); updateHUD();
+  }, 2200);
+}
+
+function addTicketItems(){
+  const maxAdd = Math.min(2, ITEMS.length - state.items.length);
+  const currentIdxs = new Set(state.items.map(it=>it.itemIdx));
+  const available = [...Array(ITEMS.length).keys()].filter(i=>!currentIdxs.has(i));
+  const toAdd = shuffle(available).slice(0, Math.max(1, maxAdd));
+
+  toAdd.forEach(idx=>{
+    const empties=getEmptyCells();
+    if(empties.length>0){
+      state.items.push({x:empties[0].x, y:empties[0].y, itemIdx:idx, collected:false});
+      state.order.push(state.items.length-1);
+    }
+  });
+  // Also reshuffle positions of uncollected items
+  const remaining=state.items.filter(it=>!it.collected);
+  const empties=getEmptyCells();
+  remaining.forEach((it,i)=>{if(empties[i]){it.x=empties[i].x;it.y=empties[i].y;}});
+}
+
+function startTicketTimer(){
+  if(state.ticketInterval) clearInterval(state.ticketInterval);
+  state.ticketInterval=setInterval(()=>{
+    if(!state.running) return;
+    if(state.level>=2 && Math.random()<0.008){ // ~every 12s on average
+      triggerTicket();
+    }
+  },1000);
+}
+
+// ═══════════════════════════════════════
+//  SIDE QUEST NPCs
+// ═══════════════════════════════════════
+function spawnNpc(){
+  if(state.npc || !state.running || state.level < 3) return;
+  const req=NPC_REQUESTS[Math.floor(Math.random()*NPC_REQUESTS.length)];
+  const gs=state.gridSize;
+  // NPC in a corner
+  const corners=[{x:0,y:0},{x:gs-1,y:0},{x:0,y:gs-1},{x:gs-1,y:gs-1}];
+  const corner=corners[Math.floor(Math.random()*corners.length)];
+  // Find empty cells for item and desk
+  const empties=getEmptyCells().filter(c=>!(c.x===corner.x&&c.y===corner.y));
+  if(empties.length<2) return;
+  const itemPos=empties[0], deskPos=empties[1];
+
+  state.npc={
+    x:corner.x, y:corner.y, request:req,
+    deskX:deskPos.x, deskY:deskPos.y,
+    itemX:itemPos.x, itemY:itemPos.y,
+    timer:200, maxTimer:200, // 20 seconds
+    phase:'waiting'
+  };
+  sfxNpcArrive();
+  npcTimerWrap.classList.add('active');
+  npcTimerLabel.textContent=`${req.person}: "${req.name}"`;
+  updateSidequestBar();
+
+  // Start NPC countdown
+  if(state.npcTimerInterval) clearInterval(state.npcTimerInterval);
+  state.npcTimerInterval=setInterval(()=>{
+    if(!state.running||!state.npc) return;
+    state.npc.timer--;
+    updateHUD();
+    if(state.npc.timer<=0){
+      // NPC gives up
+      sfxNpcFail();
+      state.timeLeft=Math.max(0,state.timeLeft-50); // -5 sec penalty
+      clearNpcTimer();
+      state.npc=null; state.carrying=null;
+      npcTimerWrap.classList.remove('active');
+      sidequestBar.classList.remove('active');
+      render(); updateHUD();
+    }
+  },100);
+}
+
+function clearNpcTimer(){
+  if(state.npcTimerInterval){clearInterval(state.npcTimerInterval);state.npcTimerInterval=null;}
+}
+
+function updateSidequestBar(){
+  if(!state.npc){sidequestBar.classList.remove('active');return;}
+  sidequestBar.classList.add('active');
+  const r=state.npc.request;
+  if(state.npc.phase==='waiting') sidequestBar.innerHTML=`${r.person} needs: ${r.emoji} ${r.name}<br>Help them for +8s bonus time!`;
+  else if(state.npc.phase==='gotItem') sidequestBar.innerHTML=`Got ${r.emoji}! Bring to desk 🗄️ → +8s`;
+  else if(state.npc.phase==='delivered') sidequestBar.innerHTML=`Return to ${r.personEmoji} to claim +8s!`;
+}
+
+let npcSpawnInterval=null;
+function startNpcSpawner(){
+  if(npcSpawnInterval) clearInterval(npcSpawnInterval);
+  npcSpawnInterval=setInterval(()=>{
+    if(!state.running||state.npc) return;
+    // Spawn chance increases with level: 1.5% at lvl3, up to ~4% at high levels
+    const npcChance = Math.min(0.015 + (state.level - 3) * 0.004, 0.045);
+    if(state.level>=3 && Math.random()<npcChance) spawnNpc();
+  },1000);
+}
+
+// ═══════════════════════════════════════
+//  BLACKOUTS
+// ═══════════════════════════════════════
+function spawnBlackout(){
+  if(!state.running) return;
+  if(state.blackouts.size>=Math.floor(state.gridSize*state.gridSize*0.3)) return;
+  const empties=getEmptyCells().filter(c=>!state.blackouts.has(cellKey(c.x,c.y)));
+  if(empties.length===0) return;
+  const pick=empties[Math.floor(Math.random()*empties.length)];
+  state.blackouts.add(cellKey(pick.x,pick.y));
+  sfxBlackout(); render();
+}
+
+// ═══════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════
+function startTimer(){
+  if(state.timerInterval) clearInterval(state.timerInterval);
+  state.timerInterval=setInterval(()=>{
+    if(!state.running) return;
+    state.timeLeft--; updateHUD();
+    if(state.timeLeft<=0) gameOver();
+  },100);
+}
+function startBlackouts(){
+  if(state.blackoutInterval) clearInterval(state.blackoutInterval);
+  const iv=Math.max(2000,5000-state.level*400);
+  state.blackoutInterval=setInterval(()=>{if(state.running) spawnBlackout();},iv);
+}
+
+// ═══════════════════════════════════════
+//  GAME FLOW
+// ═══════════════════════════════════════
+function startGame(){
+  initAudio();
+  state.level=1; state.score=0;
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('gameover-screen').classList.add('hidden');
+  document.getElementById('level-screen').classList.add('hidden');
+  document.getElementById('promo-screen').classList.add('hidden');
+  state.running=true;
+  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner();
+}
+
+function levelComplete(){
+  state.running=false;
+  clearInterval(state.timerInterval); clearInterval(state.blackoutInterval); clearInterval(state.ticketInterval);
+  clearNpcTimer(); if(npcSpawnInterval)clearInterval(npcSpawnInterval);
+  stopMusic(); stopCountdownTick();
+  sfxLevelComplete();
+  const timeBonus=Math.floor(state.timeLeft/10)*5;
+  state.score+=timeBonus;
+  if(state.score>highScore) highScore=state.score;
+  gameWrap.classList.add('server-saved');
+  setTimeout(()=>gameWrap.classList.remove('server-saved'),1800);
+  document.getElementById('level-msg').innerHTML=`Server ${state.level} is back online!<br>Time bonus: +${timeBonus}`;
+  document.getElementById('level-score').textContent='SCORE: '+state.score;
+  document.getElementById('level-screen').classList.remove('hidden');
+  updateHUD();
+}
+
+function nextLevel(){
+  document.getElementById('level-screen').classList.add('hidden');
+  state.level++;
+  const promo=checkPromotion();
+  if(promo){showPromotion(promo);return;}
+  continueToLevel();
+}
+function showPromotion(promo){
+  sfxPromotion();
+  document.getElementById('promo-new-title').textContent=promo.title;
+  document.getElementById('promo-new-title').style.color=promo.color;
+  document.getElementById('promo-desc').textContent=promo.desc;
+  document.getElementById('promo-screen').classList.remove('hidden');
+}
+function continueToLevel(){
+  state.running=true;
+  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner();
+}
+function gameOver(){
+  state.running=false;
+  clearInterval(state.timerInterval); clearInterval(state.blackoutInterval); clearInterval(state.ticketInterval);
+  clearNpcTimer(); if(npcSpawnInterval)clearInterval(npcSpawnInterval);
+  stopMusic(); stopCountdownTick();
+  sfxGameOver();
+  const isNew=state.score>highScore; if(isNew) highScore=state.score;
+  document.getElementById('final-score').textContent='SCORE: '+state.score;
+  document.getElementById('final-level').textContent='REACHED LEVEL '+state.level;
+  const hs=document.getElementById('new-hs');
+  if(isNew&&state.score>0) hs.classList.remove('hidden'); else hs.classList.add('hidden');
+  document.getElementById('gameover-screen').classList.remove('hidden');
+  gameWrap.classList.add('shake'); setTimeout(()=>gameWrap.classList.remove('shake'),300);
+  updateHUD();
+}
+
+// ═══════════════════════════════════════
+//  KEYBOARD CONTROLS
+// ═══════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  switch(e.key){
+    case'ArrowUp':e.preventDefault();movePlayer(0,-1);break;
+    case'ArrowDown':e.preventDefault();movePlayer(0,1);break;
+    case'ArrowLeft':e.preventDefault();movePlayer(-1,0);break;
+    case'ArrowRight':e.preventDefault();movePlayer(1,0);break;
+  }
+});
+
+// ═══════════════════════════════════════
+//  VIRTUAL JOYSTICK
+// ═══════════════════════════════════════
+const joystickBase=document.getElementById('joystick-base');
+const joystickStick=document.getElementById('joystick-stick');
+const dpadArrows=document.querySelectorAll('.dpad-arrow');
+let joyActive=false, joyOrigin=null, joyMoveInterval=null, lastJoyDir=null;
+
+function getJoyDir(dx,dy){
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist<12) return null;
+  const angle=Math.atan2(dy,dx)*180/Math.PI;
+  if(angle>=-45&&angle<45) return 'right';
+  if(angle>=45&&angle<135) return 'down';
+  if(angle>=135||angle<-135) return 'left';
+  return 'up';
+}
+
+const dirMap={up:{dx:0,dy:-1},down:{dx:0,dy:1},left:{dx:-1,dy:0},right:{dx:1,dy:0}};
+
+function updateJoystickVisual(dx,dy){
+  const maxDist=30;
+  const dist=Math.min(Math.sqrt(dx*dx+dy*dy),maxDist);
+  const angle=Math.atan2(dy,dx);
+  const cx=Math.cos(angle)*dist, cy=Math.sin(angle)*dist;
+  joystickStick.style.transform=`translate(${cx}px,${cy}px)`;
+  // Light up arrow
+  const dir=getJoyDir(dx,dy);
+  dpadArrows.forEach(a=>{a.classList.remove('lit');if(dir&&a.classList.contains(dir))a.classList.add('lit');});
+}
+
+joystickBase.addEventListener('touchstart',e=>{
+  e.preventDefault(); e.stopPropagation();
+  const t=e.touches[0];
+  const rect=joystickBase.getBoundingClientRect();
+  joyOrigin={x:rect.left+rect.width/2, y:rect.top+rect.height/2};
+  joyActive=true;
+  joystickStick.classList.add('active');
+  lastJoyDir=null;
+  // Start repeat interval
+  if(joyMoveInterval) clearInterval(joyMoveInterval);
+  joyMoveInterval=setInterval(()=>{
+    if(lastJoyDir){
+      const d=dirMap[lastJoyDir];
+      movePlayer(d.dx,d.dy);
+    }
+  },150);
+},{passive:false});
+
+document.addEventListener('touchmove',e=>{
+  if(!joyActive||!joyOrigin) return;
+  e.preventDefault();
+  const t=e.touches[0];
+  const dx=t.clientX-joyOrigin.x, dy=t.clientY-joyOrigin.y;
+  updateJoystickVisual(dx,dy);
+  const dir=getJoyDir(dx,dy);
+  if(dir && dir!==lastJoyDir){
+    lastJoyDir=dir;
+    const d=dirMap[dir];
+    movePlayer(d.dx,d.dy);
+  } else if(!dir){
+    lastJoyDir=null;
+  }
+},{passive:false});
+
+document.addEventListener('touchend',e=>{
+  if(!joyActive) return;
+  joyActive=false; joyOrigin=null; lastJoyDir=null;
+  joystickStick.style.transform='translate(0,0)';
+  joystickStick.classList.remove('active');
+  dpadArrows.forEach(a=>a.classList.remove('lit'));
+  if(joyMoveInterval){clearInterval(joyMoveInterval);joyMoveInterval=null;}
+});
+
+// ═══════════════════════════════════════
+//  BUTTONS
+// ═══════════════════════════════════════
+document.getElementById('start-btn').addEventListener('click',startGame);
+document.getElementById('restart-btn').addEventListener('click',startGame);
+document.getElementById('next-btn').addEventListener('click',nextLevel);
+document.getElementById('promo-btn').addEventListener('click',()=>{document.getElementById('promo-screen').classList.add('hidden');continueToLevel();});
+document.getElementById('sound-toggle').addEventListener('click',()=>{
+  soundEnabled=!soundEnabled;
+  document.getElementById('sound-toggle').textContent=soundEnabled?'🔊':'🔇';
+  if(!soundEnabled){stopMusic();stopCountdownTick();}else if(state.running){startMusic();startCountdownTick();}
+});
+</script>
+</body>
+</html>
