@@ -903,7 +903,7 @@ function movePlayer(dx,dy){
   const nx=state.player.x+dx, ny=state.player.y+dy;
   if(nx<0||nx>=state.gridSize||ny<0||ny>=state.gridSize) return;
   moveThrottle = true;
-  setTimeout(() => moveThrottle = false, state.sick ? 130 : 80);
+  setTimeout(() => moveThrottle = false, 80);
 
   state.player.x=nx; state.player.y=ny;
   sfxMove();
@@ -1322,7 +1322,7 @@ function startGame(){
   document.getElementById('level-screen').classList.add('hidden');
   document.getElementById('promo-screen').classList.add('hidden');
   state.running=true;
-  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner(); startCoughing();
+  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner();
 }
 
 const CRISIS_AVOIDED = [
@@ -1401,7 +1401,7 @@ function levelComplete(){
   if(npcSpawnInterval)clearInterval(npcSpawnInterval);
   if(phoneSpawnInterval)clearInterval(phoneSpawnInterval);
   if(emailSpawnInterval)clearInterval(emailSpawnInterval);
-  stopMusic(); stopCountdownTick(); stopCoughing();
+  stopMusic(); stopCountdownTick();
   sfxLevelComplete();
   const timeBonus=Math.floor(state.timeLeft/10)*5;
   state.score+=timeBonus;
@@ -1436,7 +1436,7 @@ function showPromotion(promo){
 }
 function continueToLevel(){
   state.running=true;
-  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner(); startCoughing();
+  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner();
 }
 function gameOver(){
   state.running=false;
@@ -1445,7 +1445,7 @@ function gameOver(){
   if(npcSpawnInterval)clearInterval(npcSpawnInterval);
   if(phoneSpawnInterval)clearInterval(phoneSpawnInterval);
   if(emailSpawnInterval)clearInterval(emailSpawnInterval);
-  stopMusic(); stopCountdownTick(); stopCoughing();
+  stopMusic(); stopCountdownTick();
   sfxGameOver();
   const isNew=state.score>highScore; if(isNew) highScore=state.score;
   document.getElementById('final-score').textContent='SCORE: '+state.score;
