@@ -12,27 +12,36 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
     font-family: 'Press Start 2P', monospace;
     overflow: hidden;
     touch-action: none;
-    padding-top: env(safe-area-inset-top, 8px);
+    padding-top: env(safe-area-inset-top, 4px);
   }
   #game-wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 3px;
     max-width: 420px;
     width: 95vw;
     position: relative;
-    padding-top: 4px;
+    padding-top: 2px;
+    height: 100%;
+    overflow: hidden;
   }
-  #title { font-size: 1.8rem; color: #e8451c; text-shadow: 3px 3px 0 #7a1a00, 0 0 20px #ff4500aa; letter-spacing: 6px; animation: titlePulse 1.5s ease-in-out infinite alternate; }
+  @media (pointer: coarse) {
+    #game-wrap { padding-bottom: 140px; } /* space for fixed d-pad */
+  }
+  #title { font-size: 1.8rem; color: #e8451c; text-shadow: 3px 3px 0 #7a1a00, 0 0 20px #ff4500aa; letter-spacing: 6px; animation: titlePulse 1.5s ease-in-out infinite alternate; line-height: 1; }
   @keyframes titlePulse { from { text-shadow: 3px 3px 0 #7a1a00, 0 0 10px #ff4500aa; } to { text-shadow: 3px 3px 0 #7a1a00, 0 0 30px #ff6a33cc; } }
-  #subtitle { font-size: 0.38rem; color: #7799aa; letter-spacing: 1px; }
-  #dave-title { font-size: 0.35rem; color: #ffaa00; letter-spacing: 1px; min-height: 10px; }
+  #subtitle { font-size: 0.35rem; color: #7799aa; letter-spacing: 1px; }
+  #dave-title { font-size: 0.3rem; color: #ffaa00; letter-spacing: 1px; min-height: 8px; }
+  @media (pointer: coarse) {
+    #title { font-size: 1.4rem; }
+    #subtitle { font-size: 0.3rem; }
+  }
   #timer-bar-outer { width: 100%; height: 14px; background: #1a1a2e; border: 2px solid #333355; border-radius: 2px; overflow: hidden; }
   #timer-bar { height: 100%; background: #22cc44; transition: width 0.1s linear, background 0.3s; width: 100%; }
   #timer-bar.danger { background: #ee2222; animation: barFlash 0.4s ease-in-out infinite alternate; }
@@ -41,14 +50,18 @@
   /* NPC timer bar */
   #npc-timer-wrap { width: 100%; display: none; }
   #npc-timer-wrap.active { display: block; }
-  #npc-timer-label { font-size: 0.35rem; color: #ff77aa; margin-bottom: 2px; }
-  #npc-timer-outer { width: 100%; height: 10px; background: #1a1a2e; border: 2px solid #553355; border-radius: 2px; overflow: hidden; }
+  #npc-timer-label { font-size: 0.28rem; color: #ff77aa; margin-bottom: 1px; }
+  #npc-timer-outer { width: 100%; height: 8px; background: #1a1a2e; border: 2px solid #553355; border-radius: 2px; overflow: hidden; }
   #npc-timer-bar { height: 100%; background: #ff77aa; transition: width 0.1s linear; width: 100%; }
   #npc-timer-bar.danger { background: #ff2255; animation: barFlash 0.3s ease-in-out infinite alternate; }
   #game-board {
     display: grid; gap: 2px; padding: 4px;
     background: #111128; border: 2px solid #222244; border-radius: 4px;
     width: 100%; aspect-ratio: 1;
+    flex-shrink: 1; min-height: 0;
+  }
+  @media (pointer: coarse) {
+    #game-board { max-height: 50vh; max-width: 50vh; }
   }
   .cell {
     background: #1e2040; border-radius: 2px;
@@ -77,13 +90,14 @@
   .carrying-indicator { position: absolute; top: -2px; right: -2px; font-size: 0.5rem; animation: carryBob 0.6s ease-in-out infinite alternate; }
   @keyframes carryBob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
   #order-bar {
-    display: flex; gap: 4px; padding: 6px 8px;
+    display: flex; gap: 3px; padding: 4px 6px;
     background: #111128; border: 2px solid #222244; border-radius: 4px;
-    width: 100%; justify-content: center; flex-wrap: wrap; min-height: 44px; align-items: center;
+    width: 100%; justify-content: center; flex-wrap: wrap; min-height: 36px; align-items: center;
+    flex-shrink: 0;
   }
   .order-item {
-    width: 34px; height: 34px; background: #1e2040; border: 2px solid #333355; border-radius: 4px;
-    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    width: 30px; height: 30px; background: #1e2040; border: 2px solid #333355; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
     position: relative; transition: all 0.2s;
   }
   .order-item.collected { border-color: #22cc44; background: #112211; opacity: 0.5; }
@@ -96,8 +110,12 @@
 
   /* ═══ SPLIT D-PAD CONTROLS ═══ */
   #dpad-area {
-    width: 100%; display: flex; justify-content: space-between; align-items: center;
-    padding: 0 8px; margin-top: 4px; gap: 20px;
+    width: 100%; max-width: 420px; display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 16px; gap: 20px;
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(to top, #0a0a1a 60%, transparent);
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+    z-index: 80;
   }
   .dpad-group {
     display: flex; align-items: center; gap: 6px;
@@ -171,7 +189,7 @@
   .npc-waiting { animation: npcPulse 0.8s ease-in-out infinite alternate; }
   @keyframes npcPulse { from { opacity: 0.7; } to { opacity: 1; } }
   /* Side quest status bar */
-  #sidequest-bar { width: 100%; display: none; padding: 4px 8px; background: #1a1128; border: 1px solid #442255; border-radius: 3px; font-size: 0.3rem; color: #cc88ee; text-align: center; line-height: 1.6; }
+  #sidequest-bar { width: 100%; display: none; padding: 3px 6px; background: #1a1128; border: 1px solid #442255; border-radius: 3px; font-size: 0.25rem; color: #cc88ee; text-align: center; line-height: 1.5; flex-shrink: 0; }
   #sidequest-bar.active { display: block; }
 </style>
 </head>
@@ -245,21 +263,23 @@
   <div id="game-board"></div>
   <div id="order-bar"></div>
 
-  <!-- SPLIT D-PAD CONTROLS -->
-  <div id="dpad-area">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-      <div class="dpad-label">MOVE</div>
-      <div class="dpad-group">
-        <div class="dpad-btn" data-dir="left" id="btn-left">◄</div>
-        <div class="dpad-btn" data-dir="right" id="btn-right">►</div>
-      </div>
+
+</div>
+
+<!-- SPLIT D-PAD CONTROLS (fixed to bottom of viewport) -->
+<div id="dpad-area">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+    <div class="dpad-label">MOVE</div>
+    <div class="dpad-group">
+      <div class="dpad-btn" data-dir="left" id="btn-left">◄</div>
+      <div class="dpad-btn" data-dir="right" id="btn-right">►</div>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-      <div class="dpad-label">MOVE</div>
-      <div class="dpad-group vertical">
-        <div class="dpad-btn" data-dir="up" id="btn-up">▲</div>
-        <div class="dpad-btn" data-dir="down" id="btn-down">▼</div>
-      </div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+    <div class="dpad-label">MOVE</div>
+    <div class="dpad-group vertical">
+      <div class="dpad-btn" data-dir="up" id="btn-up">▲</div>
+      <div class="dpad-btn" data-dir="down" id="btn-down">▼</div>
     </div>
   </div>
 </div>
@@ -305,6 +325,34 @@ function sfxTicket() { playTone(440,0.1,'square',0.15); setTimeout(()=>playTone(
 function sfxNpcArrive() { playTone(330,0.1,'triangle',0.1); setTimeout(()=>playTone(440,0.12,'triangle',0.1),120); }
 function sfxNpcComplete() { [440,554,659,880].forEach((n,i)=>setTimeout(()=>playTone(n,0.12,'square',0.1),i*80)); }
 function sfxNpcFail() { playTone(200,0.3,'sawtooth',0.08); }
+
+// Phone ringing — classic retro ring-ring
+let phoneRingInterval=null;
+function sfxPhoneRing(){
+  if(!audioCtx||!soundEnabled) return;
+  if(phoneRingInterval) clearInterval(phoneRingInterval);
+  let rings=0;
+  phoneRingInterval=setInterval(()=>{
+    if(!soundEnabled||!state.phone||rings>=20){clearInterval(phoneRingInterval);phoneRingInterval=null;return;}
+    playTone(1200,0.06,'square',0.1);
+    setTimeout(()=>playTone(1400,0.06,'square',0.1),70);
+    setTimeout(()=>playTone(1200,0.06,'square',0.1),140);
+    rings++;
+  },500);
+}
+function stopPhoneRing(){if(phoneRingInterval){clearInterval(phoneRingInterval);phoneRingInterval=null;}}
+function sfxPhoneAnswer(){playTone(600,0.08,'sine',0.1);setTimeout(()=>playTone(800,0.1,'sine',0.1),80);setTimeout(()=>playTone(1000,0.12,'sine',0.08),160);}
+function sfxPhoneMissed(){playTone(300,0.15,'triangle',0.08);setTimeout(()=>playTone(200,0.2,'triangle',0.06),150);}
+
+// Email — "you've got mail" chime
+function sfxEmailArrive(){
+  playTone(523,0.12,'sine',0.1);
+  setTimeout(()=>playTone(659,0.12,'sine',0.1),120);
+  setTimeout(()=>playTone(784,0.15,'sine',0.12),240);
+  setTimeout(()=>playTone(1047,0.2,'sine',0.1),380);
+}
+function sfxEmailRead(){playTone(880,0.06,'square',0.08);setTimeout(()=>playTone(1100,0.08,'square',0.06),60);}
+function sfxEmailMissed(){playTone(250,0.12,'triangle',0.06);setTimeout(()=>playTone(180,0.15,'triangle',0.05),120);}
 
 // Background music
 const BASS_PATTERNS=[[65,0,82,0,98,0,82,0],[73,0,98,0,110,0,98,0],[87,0,110,0,131,0,110,0],[82,0,98,0,110,0,131,0]];
@@ -390,9 +438,12 @@ let state = {
   blackouts:new Set(), timeLeft:0, maxTime:0, running:false,
   timerInterval:null, blackoutInterval:null, ticketInterval:null,
   // Side quest
-  npc: null, // { x, y, request, deskX, deskY, itemX, itemY, timer, maxTimer, phase:'waiting'|'gotItem'|'delivered' }
-  npcTimerInterval: null,
-  carrying: null, // emoji of item being carried
+  npc: null, npcTimerInterval: null, carrying: null,
+  // Phone & Email interrupts
+  phone: null, // { x, y, timer, maxTimer }
+  phoneTimerInterval: null,
+  email: null, // { x, y, timer, maxTimer }
+  emailTimerInterval: null,
 };
 
 // DOM
@@ -414,6 +465,8 @@ function getEmptyCells(){
     used.add(cellKey(state.npc.deskX,state.npc.deskY));
     if(state.npc.phase==='waiting') used.add(cellKey(state.npc.itemX,state.npc.itemY));
   }
+  if(state.phone) used.add(cellKey(state.phone.x,state.phone.y));
+  if(state.email) used.add(cellKey(state.email.x,state.email.y));
   const empty=[];
   for(let y=0;y<state.gridSize;y++)for(let x=0;x<state.gridSize;x++)if(!used.has(cellKey(x,y)))empty.push({x,y});
   return shuffle(empty);
@@ -430,7 +483,9 @@ function initLevel(){
   state.maxTime=baseTime; state.timeLeft=baseTime*10;
   state.nextCollect=0; state.blackouts=new Set();
   state.npc=null; state.carrying=null;
-  clearNpcTimer();
+  state.phone=null; state.email=null;
+  clearNpcTimer(); clearPhoneTimer(); clearEmailTimer();
+  stopPhoneRing();
   npcTimerWrap.classList.remove('active');
   sidequestBar.classList.remove('active');
 
@@ -497,6 +552,16 @@ function render(){
       else if(state.npc && state.npc.phase==='waiting' && state.npc.itemX===x && state.npc.itemY===y){
         content.textContent=state.npc.request.emoji;
       }
+      // Phone
+      else if(state.phone && state.phone.x===x && state.phone.y===y){
+        content.innerHTML='<span class="npc-waiting">📞</span>';
+        cell.style.boxShadow='inset 0 0 8px #44cc44';
+      }
+      // Email
+      else if(state.email && state.email.x===x && state.email.y===y){
+        content.innerHTML='<span class="npc-waiting">📧</span>';
+        cell.style.boxShadow='inset 0 0 8px #4488ee';
+      }
       // Regular item
       else {
         const item=state.items.find(it=>it.x===x&&it.y===y&&!it.collected);
@@ -556,6 +621,26 @@ function movePlayer(dx,dy){
 
   // Fix blackout
   if(state.blackouts.has(key)){ state.blackouts.delete(key); state.score+=10; sfxLightOn(); }
+
+  // ── Phone interaction ──
+  if(state.phone && nx===state.phone.x && ny===state.phone.y){
+    const timeReward=50; // +5 seconds
+    state.timeLeft=Math.min(state.timeLeft+timeReward, state.maxTime*10);
+    state.score+=30;
+    sfxPhoneAnswer(); stopPhoneRing();
+    showTimeBonus(nx,ny,'+5s');
+    clearPhoneTimer(); state.phone=null;
+  }
+
+  // ── Email interaction ──
+  if(state.email && nx===state.email.x && ny===state.email.y){
+    const timeReward=30; // +3 seconds
+    state.timeLeft=Math.min(state.timeLeft+timeReward, state.maxTime*10);
+    state.score+=20;
+    sfxEmailRead();
+    showTimeBonus(nx,ny,'+3s');
+    clearEmailTimer(); state.email=null;
+  }
 
   // ── NPC interactions ──
   if(state.npc){
@@ -747,6 +832,78 @@ function startNpcSpawner(){
 }
 
 // ═══════════════════════════════════════
+//  PHONE CALLS
+// ═══════════════════════════════════════
+function spawnPhone(){
+  if(state.phone||!state.running) return;
+  const empties=getEmptyCells();
+  if(empties.length===0) return;
+  const pos=empties[0];
+  state.phone={x:pos.x, y:pos.y, timer:80, maxTimer:80}; // 8 seconds to answer
+  sfxPhoneRing();
+  render();
+  // Phone countdown
+  if(state.phoneTimerInterval) clearInterval(state.phoneTimerInterval);
+  state.phoneTimerInterval=setInterval(()=>{
+    if(!state.running||!state.phone) return;
+    state.phone.timer--;
+    if(state.phone.timer<=0){
+      // Missed the call
+      sfxPhoneMissed(); stopPhoneRing();
+      state.timeLeft=Math.max(0,state.timeLeft-30); // -3s penalty
+      showPenalty(state.phone.x, state.phone.y);
+      clearPhoneTimer(); state.phone=null;
+      render();
+    }
+  },100);
+}
+function clearPhoneTimer(){if(state.phoneTimerInterval){clearInterval(state.phoneTimerInterval);state.phoneTimerInterval=null;}}
+
+let phoneSpawnInterval=null;
+function startPhoneSpawner(){
+  if(phoneSpawnInterval) clearInterval(phoneSpawnInterval);
+  phoneSpawnInterval=setInterval(()=>{
+    if(!state.running||state.phone) return;
+    if(state.level>=2 && Math.random()<0.012) spawnPhone();
+  },1000);
+}
+
+// ═══════════════════════════════════════
+//  EMAIL NOTIFICATIONS
+// ═══════════════════════════════════════
+function spawnEmail(){
+  if(state.email||!state.running) return;
+  const empties=getEmptyCells();
+  if(empties.length===0) return;
+  const pos=empties[0];
+  state.email={x:pos.x, y:pos.y, timer:100, maxTimer:100}; // 10 seconds to read
+  sfxEmailArrive();
+  render();
+  if(state.emailTimerInterval) clearInterval(state.emailTimerInterval);
+  state.emailTimerInterval=setInterval(()=>{
+    if(!state.running||!state.email) return;
+    state.email.timer--;
+    if(state.email.timer<=0){
+      sfxEmailMissed();
+      state.timeLeft=Math.max(0,state.timeLeft-20); // -2s penalty
+      showPenalty(state.email.x, state.email.y);
+      clearEmailTimer(); state.email=null;
+      render();
+    }
+  },100);
+}
+function clearEmailTimer(){if(state.emailTimerInterval){clearInterval(state.emailTimerInterval);state.emailTimerInterval=null;}}
+
+let emailSpawnInterval=null;
+function startEmailSpawner(){
+  if(emailSpawnInterval) clearInterval(emailSpawnInterval);
+  emailSpawnInterval=setInterval(()=>{
+    if(!state.running||state.email) return;
+    if(state.level>=1 && Math.random()<0.01) spawnEmail();
+  },1000);
+}
+
+// ═══════════════════════════════════════
 //  BLACKOUTS
 // ═══════════════════════════════════════
 function spawnBlackout(){
@@ -787,13 +944,16 @@ function startGame(){
   document.getElementById('level-screen').classList.add('hidden');
   document.getElementById('promo-screen').classList.add('hidden');
   state.running=true;
-  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner();
+  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner();
 }
 
 function levelComplete(){
   state.running=false;
   clearInterval(state.timerInterval); clearInterval(state.blackoutInterval); clearInterval(state.ticketInterval);
-  clearNpcTimer(); if(npcSpawnInterval)clearInterval(npcSpawnInterval);
+  clearNpcTimer(); clearPhoneTimer(); clearEmailTimer(); stopPhoneRing();
+  if(npcSpawnInterval)clearInterval(npcSpawnInterval);
+  if(phoneSpawnInterval)clearInterval(phoneSpawnInterval);
+  if(emailSpawnInterval)clearInterval(emailSpawnInterval);
   stopMusic(); stopCountdownTick();
   sfxLevelComplete();
   const timeBonus=Math.floor(state.timeLeft/10)*5;
@@ -823,12 +983,15 @@ function showPromotion(promo){
 }
 function continueToLevel(){
   state.running=true;
-  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner();
+  initLevel(); startTimer(); startBlackouts(); startMusic(); startCountdownTick(); startTicketTimer(); startNpcSpawner(); startPhoneSpawner(); startEmailSpawner();
 }
 function gameOver(){
   state.running=false;
   clearInterval(state.timerInterval); clearInterval(state.blackoutInterval); clearInterval(state.ticketInterval);
-  clearNpcTimer(); if(npcSpawnInterval)clearInterval(npcSpawnInterval);
+  clearNpcTimer(); clearPhoneTimer(); clearEmailTimer(); stopPhoneRing();
+  if(npcSpawnInterval)clearInterval(npcSpawnInterval);
+  if(phoneSpawnInterval)clearInterval(phoneSpawnInterval);
+  if(emailSpawnInterval)clearInterval(emailSpawnInterval);
   stopMusic(); stopCountdownTick();
   sfxGameOver();
   const isNew=state.score>highScore; if(isNew) highScore=state.score;
