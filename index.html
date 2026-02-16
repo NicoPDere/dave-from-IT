@@ -94,37 +94,37 @@
   #score-display, #level-display, #highscore-display { padding: 3px 6px; background: #111128; border: 1px solid #222244; border-radius: 3px; }
   #highscore-display { color: #ffaa00; }
 
-  /* ═══ VIRTUAL JOYSTICK ═══ */
-  #joystick-area {
-    width: 100%; height: 120px; display: flex; justify-content: center; align-items: center;
-    position: relative; margin-top: 4px;
+  /* ═══ SPLIT D-PAD CONTROLS ═══ */
+  #dpad-area {
+    width: 100%; display: flex; justify-content: space-between; align-items: center;
+    padding: 0 8px; margin-top: 4px; gap: 20px;
   }
-  #joystick-base {
-    width: 110px; height: 110px; border-radius: 50%;
-    background: radial-gradient(circle, #1a1a3a 0%, #0d0d20 100%);
-    border: 3px solid #333366; position: relative;
+  .dpad-group {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dpad-group.vertical { flex-direction: column; }
+  .dpad-btn {
+    width: 56px; height: 56px; border-radius: 6px;
+    background: #151530; border: 3px solid #333366;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 10px rgba(50,50,100,0.3);
+    font-family: 'Press Start 2P', monospace; font-size: 1.1rem; color: #5566aa;
+    cursor: pointer; position: relative;
+    box-shadow: inset 0 -3px 0 #0a0a1a, 0 3px 6px rgba(0,0,0,0.4);
+    transition: all 0.06s;
   }
-  #joystick-stick {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #4455aa, #222255);
-    border: 2px solid #5566cc;
-    position: absolute; transition: transform 0.08s ease-out;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  .dpad-btn:active, .dpad-btn.pressed {
+    background: #1a1a44; border-color: #7788ee; color: #99aaff;
+    box-shadow: inset 0 2px 0 #0a0a1a, 0 1px 3px rgba(0,0,0,0.3);
+    transform: translateY(2px);
   }
-  #joystick-stick.active { border-color: #7788ee; background: radial-gradient(circle at 35% 35%, #5566cc, #333377); }
-  /* D-pad indicators */
-  .dpad-arrow { position: absolute; color: #334; font-size: 0.7rem; opacity: 0.4; }
-  .dpad-arrow.up { top: 6px; left: 50%; transform: translateX(-50%); }
-  .dpad-arrow.down { bottom: 6px; left: 50%; transform: translateX(-50%); }
-  .dpad-arrow.left { left: 8px; top: 50%; transform: translateY(-50%); }
-  .dpad-arrow.right { right: 8px; top: 50%; transform: translateY(-50%); }
-  .dpad-arrow.lit { color: #7788ee; opacity: 1; }
-  /* Hide joystick on desktop, show on touch */
-  #joystick-area { display: none; }
-  @media (pointer: coarse) { #joystick-area { display: flex; } }
-  @media (hover: none) { #joystick-area { display: flex; } }
+  .dpad-label {
+    font-size: 0.3rem; color: #334466; text-align: center;
+    font-family: 'Press Start 2P', monospace; letter-spacing: 1px;
+  }
+  /* Hide d-pad on desktop, show on touch */
+  #dpad-area { display: none; }
+  @media (pointer: coarse) { #dpad-area { display: flex; } }
+  @media (hover: none) { #dpad-area { display: flex; } }
 
   /* ═══ OVERLAYS ═══ */
   .overlay {
@@ -245,14 +245,21 @@
   <div id="game-board"></div>
   <div id="order-bar"></div>
 
-  <!-- VIRTUAL JOYSTICK -->
-  <div id="joystick-area">
-    <div id="joystick-base">
-      <div class="dpad-arrow up">▲</div>
-      <div class="dpad-arrow down">▼</div>
-      <div class="dpad-arrow left">◄</div>
-      <div class="dpad-arrow right">►</div>
-      <div id="joystick-stick"></div>
+  <!-- SPLIT D-PAD CONTROLS -->
+  <div id="dpad-area">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div class="dpad-label">MOVE</div>
+      <div class="dpad-group">
+        <div class="dpad-btn" data-dir="left" id="btn-left">◄</div>
+        <div class="dpad-btn" data-dir="right" id="btn-right">►</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div class="dpad-label">MOVE</div>
+      <div class="dpad-group vertical">
+        <div class="dpad-btn" data-dir="up" id="btn-up">▲</div>
+        <div class="dpad-btn" data-dir="down" id="btn-down">▼</div>
+      </div>
     </div>
   </div>
 </div>
@@ -847,77 +854,50 @@ document.addEventListener('keydown',e=>{
 });
 
 // ═══════════════════════════════════════
-//  VIRTUAL JOYSTICK
+//  SPLIT D-PAD CONTROLS
 // ═══════════════════════════════════════
-const joystickBase=document.getElementById('joystick-base');
-const joystickStick=document.getElementById('joystick-stick');
-const dpadArrows=document.querySelectorAll('.dpad-arrow');
-let joyActive=false, joyOrigin=null, joyMoveInterval=null, lastJoyDir=null;
-
-function getJoyDir(dx,dy){
-  const dist=Math.sqrt(dx*dx+dy*dy);
-  if(dist<12) return null;
-  const angle=Math.atan2(dy,dx)*180/Math.PI;
-  if(angle>=-45&&angle<45) return 'right';
-  if(angle>=45&&angle<135) return 'down';
-  if(angle>=135||angle<-135) return 'left';
-  return 'up';
-}
-
 const dirMap={up:{dx:0,dy:-1},down:{dx:0,dy:1},left:{dx:-1,dy:0},right:{dx:1,dy:0}};
+const dpadBtns=document.querySelectorAll('.dpad-btn');
+let dpadIntervals={};
 
-function updateJoystickVisual(dx,dy){
-  const maxDist=30;
-  const dist=Math.min(Math.sqrt(dx*dx+dy*dy),maxDist);
-  const angle=Math.atan2(dy,dx);
-  const cx=Math.cos(angle)*dist, cy=Math.sin(angle)*dist;
-  joystickStick.style.transform=`translate(${cx}px,${cy}px)`;
-  // Light up arrow
-  const dir=getJoyDir(dx,dy);
-  dpadArrows.forEach(a=>{a.classList.remove('lit');if(dir&&a.classList.contains(dir))a.classList.add('lit');});
+function dpadStart(dir,btn){
+  btn.classList.add('pressed');
+  const d=dirMap[dir];
+  movePlayer(d.dx,d.dy); // immediate first move
+  // Auto-repeat on hold
+  if(dpadIntervals[dir]) clearInterval(dpadIntervals[dir]);
+  dpadIntervals[dir]=setInterval(()=>movePlayer(d.dx,d.dy),130);
+}
+function dpadStop(dir,btn){
+  btn.classList.remove('pressed');
+  if(dpadIntervals[dir]){clearInterval(dpadIntervals[dir]);delete dpadIntervals[dir];}
 }
 
-joystickBase.addEventListener('touchstart',e=>{
-  e.preventDefault(); e.stopPropagation();
-  const t=e.touches[0];
-  const rect=joystickBase.getBoundingClientRect();
-  joyOrigin={x:rect.left+rect.width/2, y:rect.top+rect.height/2};
-  joyActive=true;
-  joystickStick.classList.add('active');
-  lastJoyDir=null;
-  // Start repeat interval
-  if(joyMoveInterval) clearInterval(joyMoveInterval);
-  joyMoveInterval=setInterval(()=>{
-    if(lastJoyDir){
-      const d=dirMap[lastJoyDir];
-      movePlayer(d.dx,d.dy);
-    }
-  },150);
-},{passive:false});
-
-document.addEventListener('touchmove',e=>{
-  if(!joyActive||!joyOrigin) return;
-  e.preventDefault();
-  const t=e.touches[0];
-  const dx=t.clientX-joyOrigin.x, dy=t.clientY-joyOrigin.y;
-  updateJoystickVisual(dx,dy);
-  const dir=getJoyDir(dx,dy);
-  if(dir && dir!==lastJoyDir){
-    lastJoyDir=dir;
-    const d=dirMap[dir];
-    movePlayer(d.dx,d.dy);
-  } else if(!dir){
-    lastJoyDir=null;
-  }
-},{passive:false});
-
-document.addEventListener('touchend',e=>{
-  if(!joyActive) return;
-  joyActive=false; joyOrigin=null; lastJoyDir=null;
-  joystickStick.style.transform='translate(0,0)';
-  joystickStick.classList.remove('active');
-  dpadArrows.forEach(a=>a.classList.remove('lit'));
-  if(joyMoveInterval){clearInterval(joyMoveInterval);joyMoveInterval=null;}
+dpadBtns.forEach(btn=>{
+  const dir=btn.dataset.dir;
+  // Touch events
+  btn.addEventListener('touchstart',e=>{
+    e.preventDefault(); e.stopPropagation();
+    dpadStart(dir,btn);
+  },{passive:false});
+  btn.addEventListener('touchend',e=>{
+    e.preventDefault();
+    dpadStop(dir,btn);
+  },{passive:false});
+  btn.addEventListener('touchcancel',e=>{
+    dpadStop(dir,btn);
+  });
+  // Mouse fallback (for testing on desktop)
+  btn.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    dpadStart(dir,btn);
+  });
+  btn.addEventListener('mouseup',e=>{
+    dpadStop(dir,btn);
+  });
+  btn.addEventListener('mouseleave',e=>{
+    dpadStop(dir,btn);
+  });
 });
 
 // ═══════════════════════════════════════
