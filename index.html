@@ -243,6 +243,16 @@
   .new-highscore { font-size: 0.55rem; color: #ffdd44; animation: hsFlash 0.5s ease-in-out infinite alternate; }
   @keyframes hsFlash { from { text-shadow: 0 0 5px #ffdd4444; } to { text-shadow: 0 0 15px #ffdd44aa; } }
   #sound-toggle { position: fixed; top: 8px; right: 8px; font-size: 1rem; background: #111128; border: 2px solid #333355; border-radius: 4px; padding: 4px 6px; cursor: pointer; z-index: 200; color: white; }
+  #pause-toggle { position: fixed; top: 8px; right: 52px; font-size: 1rem; background: #111128; border: 2px solid #333355; border-radius: 4px; padding: 4px 6px; cursor: pointer; z-index: 200; color: white; }
+  #pause-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.82); display: none; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 95; gap: 16px;
+  }
+  #pause-overlay.active { display: flex; }
+  #pause-overlay h2 { font-family: 'Press Start 2P', monospace; font-size: 1.4rem; color: #7799aa; text-shadow: 2px 2px 0 #334466; animation: pausePulse 1.5s ease-in-out infinite alternate; }
+  @keyframes pausePulse { from { opacity: 0.6; } to { opacity: 1; } }
+  #pause-overlay p { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #556677; }
   /* NPC waiting indicator */
   .npc-waiting { animation: npcPulse 0.8s ease-in-out infinite alternate; }
   @keyframes npcPulse { from { opacity: 0.7; } to { opacity: 1; } }
@@ -254,7 +264,15 @@
 </head>
 <body>
 
+<button id="pause-toggle" title="Pause/Resume">⏸️</button>
 <button id="sound-toggle" title="Toggle Sound">🔊</button>
+
+<!-- PAUSE OVERLAY -->
+<div id="pause-overlay">
+  <h2>PAUSED</h2>
+  <p>PRESS SPACE OR TAP TO RESUME</p>
+  <button class="btn" id="resume-btn" style="background:#556688;">RESUME</button>
+</div>
 <div id="sound-reminder" style="display:none;position:fixed;top:40px;right:8px;font-family:'Press Start 2P',monospace;font-size:0.3rem;color:#ffaa00;background:#111128;border:2px solid #ffaa00;border-radius:4px;padding:4px 8px;z-index:200;animation:nextPulse 0.8s ease-in-out infinite alternate;">TAP TO RESUME SOUND</div>
 
 <!-- START SCREEN -->
@@ -1322,6 +1340,9 @@ function startGame(){
   initAudio();
   state.level=1; state.score=0;
   usedTicketMsgs=[]; usedCrisisMsgs=[]; usedSickMsgs=[];
+  gamePaused=false;
+  document.getElementById('pause-overlay').classList.remove('active');
+  document.getElementById('pause-toggle').textContent='⏸️';
   document.getElementById('start-screen').classList.add('hidden');
   document.getElementById('gameover-screen').classList.add('hidden');
   document.getElementById('level-screen').classList.add('hidden');
@@ -1463,16 +1484,53 @@ function gameOver(){
 }
 
 // ═══════════════════════════════════════
+//  PAUSE / RESUME
+// ═══════════════════════════════════════
+let gamePaused = false;
+
+function pauseGame(){
+  if(!state.running || gamePaused) return;
+  gamePaused = true;
+  state.running = false;
+  stopMusic(); stopCountdownTick();
+  document.getElementById('pause-overlay').classList.add('active');
+  document.getElementById('pause-toggle').textContent = '▶️';
+}
+
+function resumeGame(){
+  if(!gamePaused) return;
+  gamePaused = false;
+  state.running = true;
+  if(soundEnabled){ startMusic(); startCountdownTick(); }
+  document.getElementById('pause-overlay').classList.remove('active');
+  document.getElementById('pause-toggle').textContent = '⏸️';
+}
+
+function togglePause(){
+  if(gamePaused) resumeGame(); else pauseGame();
+}
+
+document.getElementById('pause-toggle').addEventListener('click', togglePause);
+document.getElementById('resume-btn').addEventListener('click', resumeGame);
+
+// ═══════════════════════════════════════
 //  KEYBOARD CONTROLS
 // ═══════════════════════════════════════
 document.addEventListener('keydown',e=>{
   switch(e.key){
+    case'Escape':
+      e.preventDefault();
+      if(gamePaused) resumeGame();
+      else if(state.running) pauseGame();
+      return;
     case'ArrowUp':e.preventDefault();movePlayer(0,-1);break;
     case'ArrowDown':e.preventDefault();movePlayer(0,1);break;
     case'ArrowLeft':e.preventDefault();movePlayer(-1,0);break;
     case'ArrowRight':e.preventDefault();movePlayer(1,0);break;
     case' ':case'Enter':
       e.preventDefault();
+      // Resume from pause
+      if(gamePaused){resumeGame();return;}
       // Start screen
       if(!document.getElementById('start-screen').classList.contains('hidden')){startGame();return;}
       // Game over — restart
